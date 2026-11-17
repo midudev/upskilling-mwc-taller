@@ -16,7 +16,7 @@ const { Content } = reto;
 
 <Base title={`Reto ${reto.bloque}: ${reto.title}`} description={reto.resumen}>
   <p class="label">
-    <a href="/retos">Retos</a> / Bloque {reto.bloque} · {reto.minutos} min ·
+    <a href="/retos">Retos</a> / {reto.extra ? 'Extra' : `Bloque ${reto.bloque}`} · {reto.minutos} min ·
     <code>retos/{reto.slug}</code>
   </p>
   <h1>{reto.title}</h1>

@@ -19,7 +19,10 @@ import Base from '../../layouts/Base.astro';
           <a href={`/retos/${reto.slug}`}>
             <span class="n">0{reto.bloque}</span>
             <div>
-              <h2>{reto.title}</h2>
+              <h2>
+                {reto.title}
+                {reto.extra && <small class="muted"> · extra</small>}
+              </h2>
               <p class="muted">{reto.resumen}</p>
             </div>
             <span class="muted time">{reto.minutos} min</span>
@@ -33,7 +36,8 @@ import Base from '../../layouts/Base.astro';
 ├── 01-mcp-ui/     inicio/  solucion/  README.md
 ├── 02-webmcp/     inicio/  solucion/  README.md
 ├── 03-jev/        inicio/  solucion/  README.md
-└── 04-ia-local/   inicio/  solucion/  README.md   ← la solución es la app completa</code></pre>
+├── 04-ia-local/   inicio/  solucion/  README.md   ← la solución es la app completa
+└── 05-runonweb/   inicio/  solucion/  README.md   ← extra: más IA en local con runonweb</code></pre>
 </Base>
 
 <style>

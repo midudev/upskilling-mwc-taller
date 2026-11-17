@@ -728,6 +728,33 @@ const salida = await generador(mensajes, { max_new_tokens: 120 });`;
         <p class="foot"><a class="demo" href="/directo/resumir" target="_blank" rel="noopener">Abrir la demo ↗</a>/directo/resumir</p>
       </Slide>
 
+      <Slide label={B4} title="En directo: traductor con Whisper">
+        <ol class="steps">
+          <li><span class="n">1</span><PixelIcon name="gpu" size={80} /><div><h3>Whisper en la GPU</h3><p>Transcribe lo que dices con WebGPU, mientras hablas</p></div></li>
+          <li><span class="n">2</span><PixelIcon name="arrows" size={80} /><div><h3>Traduce frase a frase</h3><p>Bergamot, el motor de Firefox, con <code>runonweb/translate</code></p></div></li>
+          <li><span class="n">3</span><PixelIcon name="lock" size={80} /><div><h3>Sin servidor</h3><p>La voz no sale del dispositivo</p></div></li>
+        </ol>
+        <p class="foot"><a class="demo" href="/directo/traductor" target="_blank" rel="noopener">Abrir la demo ↗</a>/directo/traductor · L limpia · I intercambia idiomas</p>
+      </Slide>
+
+      <Slide label={B4} title="En directo: un chat en tu GPU">
+        <ol class="steps">
+          <li><span class="n">1</span><PixelIcon name="download" size={80} /><div><h3>Qwen 3.5 · 0.8B</h3><p>Se descarga una vez (~790 MB) y se queda en caché</p></div></li>
+          <li><span class="n">2</span><PixelIcon name="chat" size={80} /><div><h3>Texto e imágenes</h3><p>Arrastra una foto; con <code>razonar</code>, piensa antes de responder</p></div></li>
+          <li><span class="n">3</span><PixelIcon name="browser-ai" size={80} /><div><h3>Sin conexión</h3><p>Quita el wifi: sigue respondiendo</p></div></li>
+        </ol>
+        <p class="foot"><a class="demo" href="/directo/chat" target="_blank" rel="noopener">Abrir la demo ↗</a>/directo/chat · Transformers.js + WebGPU</p>
+      </Slide>
+
+      <Slide label={B4} title="En directo: una foto, tres modelos">
+        <ol class="steps">
+          <li><span class="n">1</span><PixelIcon name="eye" size={80} /><div><h3>Quitar el fondo</h3><p><code>runonweb/remove-bg</code></p></div></li>
+          <li><span class="n">2</span><PixelIcon name="doc" size={80} /><div><h3>Describir la foto</h3><p><code>runonweb/caption</code>, en español</p></div></li>
+          <li><span class="n">3</span><PixelIcon name="chat" size={80} /><div><h3>Leerla en voz alta</h3><p><code>runonweb/tts</code></p></div></li>
+        </ol>
+        <p class="foot"><a class="demo" href="/directo/runonweb" target="_blank" rel="noopener">Abrir la demo ↗</a>directo/runonweb/foto.js · un import por modelo</p>
+      </Slide>
+
       <Slide kind="reto" label={B4}>
         <div class="split">
           <div>
@@ -741,6 +768,22 @@ const salida = await generador(mensajes, { max_new_tokens: 120 });`;
             <p class="path">retos/04-ia-local/inicio · 17 min</p>
           </div>
           <PixelIcon name="ia-local" size={320} class="hero" />
+        </div>
+      </Slide>
+
+      <Slide kind="reto" label={B4}>
+        <div class="split">
+          <div>
+            <p class="num">Reto 5 · extra</p>
+            <h2>Más IA en local con runonweb</h2>
+            <ul>
+              <li>Traduce las reseñas: <code>runonweb/translate</code></li>
+              <li>Busca por significado con embeddings: <code>runonweb/embed</code></li>
+              <li>Dicta la búsqueda con Whisper: <code>runonweb/stt</code></li>
+            </ul>
+            <p class="path">retos/05-runonweb/inicio · 15 min · <a href="http://localhost:3005" target="_blank" rel="noopener">localhost:3005</a></p>
+          </div>
+          <PixelIcon name="browser-ai" size={320} class="hero" />
         </div>
       </Slide>
 
