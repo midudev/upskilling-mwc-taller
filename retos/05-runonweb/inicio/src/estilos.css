@@ -527,3 +527,51 @@ form:tool-form-active {
 .nueva-reseña button {
   justify-self: start;
 }
+
+/* Reto 5 · runonweb */
+.significado .botones {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.dictar span {
+  color: var(--suave);
+}
+
+.dictar[aria-pressed='true'] {
+  border-color: var(--acento);
+  color: var(--acento);
+}
+
+.dictar[aria-pressed='true'] span {
+  color: var(--acento);
+  animation: parpadeo 1s steps(1) infinite;
+}
+
+.acciones-locales {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.acciones-locales audio {
+  width: 100%;
+  height: 2.25rem;
+  margin-top: 0.25rem;
+}
+
+.acciones-locales .estado {
+  flex-basis: 100%;
+  min-height: 0;
+  margin: 0;
+}
+
+.acciones-locales .estado:empty {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dictar[aria-pressed='true'] span {
+    animation: none;
+  }
+}

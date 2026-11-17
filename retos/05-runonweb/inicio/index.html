@@ -46,6 +46,20 @@
           <button type="submit">Buscar</button>
         </form>
 
+        <!-- Reto 5 · runonweb: buscar por significado y dictar, en local -->
+        <form id="significado" class="inteligente significado">
+          <label>
+            <span>Buscar por significado <small>· runonweb, en tu navegador</small></span>
+            <input type="text" name="peticion" placeholder="algo para no oír a nadie en el tren" autocomplete="off" required />
+          </label>
+          <div class="botones">
+            <button id="dictar" type="button" class="dictar" aria-pressed="false" title="Dictar la búsqueda">
+              <span aria-hidden="true">●</span> Dictar
+            </button>
+            <button type="submit">Buscar</button>
+          </div>
+        </form>
+
         <p id="estado" class="estado" role="status"></p>
         <ul id="productos" class="productos"></ul>
       </section>

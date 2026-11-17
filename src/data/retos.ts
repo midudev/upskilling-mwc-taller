@@ -5,6 +5,8 @@ export interface RetoFrontmatter {
   bloque: number;
   minutos: number;
   resumen: string;
+  /** Reto opcional, fuera de la agenda (el 5, runonweb) */
+  extra?: boolean;
 }
 
 // Los enunciados viven junto al código de cada reto: retos/<slug>/README.md

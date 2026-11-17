@@ -1,7 +1,8 @@
 // Interfaz de la tienda. No hace falta tocar este archivo durante el taller:
-// el trabajo de cada bloque está en webmcp.js, jev.js e ia-local.js.
+// el trabajo de cada bloque está en webmcp.js, jev.js, ia-local.js y runonweb.js.
 import { resumirReseñas } from './ia-local.js';
 import { busquedaInteligente, moderarReseña } from './jev.js';
+import { buscarPorSignificado, dictar, leerEnVozAlta, traducirReseñas } from './runonweb.js';
 import {
   añadirAlCarrito,
   añadirReseña,
@@ -12,6 +13,7 @@ import {
   obtenerProducto,
   quitarDelCarrito,
   tienda,
+  todosLosProductos,
   vaciarCarrito,
   verCarrito,
 } from './tienda.js';
@@ -21,6 +23,8 @@ const $ = (selector, raiz = document) => raiz.querySelector(selector);
 
 const $filtros = $('#filtros');
 const $inteligente = $('#inteligente');
+const $significado = $('#significado');
+const $dictar = $('#dictar');
 const $productos = $('#productos');
 const $estado = $('#estado');
 const $lineas = $('#lineas');
@@ -136,6 +140,78 @@ $inteligente.addEventListener('submit', async (evento) => {
   }
 });
 
+// ── Reto 5 · Buscar por significado y dictar con runonweb ─────────────────
+
+const descargando = (porcentaje) => ($estado.textContent = `Descargando el modelo… ${porcentaje} %`);
+
+$significado.addEventListener('submit', async (evento) => {
+  evento.preventDefault();
+  const $boton = $('button[type="submit"]', $significado);
+  const peticion = $significado.peticion.value.trim();
+
+  $boton.disabled = true;
+  $estado.textContent = 'Buscando en tu navegador…';
+  const inicio = performance.now();
+
+  try {
+    recomendados = await buscarPorSignificado(peticion, todosLosProductos(), { alProgresar: descargando });
+    const milisegundos = Math.round(performance.now() - inicio);
+    $estado.textContent = `Lo más parecido a «${peticion}» · ${milisegundos} ms, en local`;
+    pintarProductos();
+  } catch (error) {
+    $estado.textContent = error.message;
+  } finally {
+    $boton.disabled = false;
+  }
+});
+
+// Primer clic: graba con el micrófono. Segundo clic: para, transcribe y busca
+let grabadora = null;
+
+$dictar.addEventListener('click', async () => {
+  if (grabadora) {
+    grabadora.stop();
+    return;
+  }
+
+  let microfono;
+  try {
+    microfono = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (error) {
+    $estado.textContent = `No hay micrófono: ${error.message}`;
+    return;
+  }
+
+  const trozos = [];
+  grabadora = new MediaRecorder(microfono);
+  grabadora.addEventListener('dataavailable', (evento) => trozos.push(evento.data));
+  grabadora.addEventListener('stop', async () => {
+    for (const pista of microfono.getTracks()) pista.stop();
+    grabadora = null;
+    $dictar.ariaPressed = 'false';
+    $dictar.disabled = true;
+    $estado.textContent = 'Transcribiendo en tu navegador…';
+
+    try {
+      const texto = await dictar(new Blob(trozos, { type: trozos[0]?.type }), {
+        alProgresar: descargando,
+        alEscribir: (parcial) => ($significado.peticion.value = parcial.trim()),
+      });
+      $significado.peticion.value = texto;
+      if (texto) $significado.requestSubmit();
+      else $estado.textContent = 'No se ha entendido nada. Prueba otra vez.';
+    } catch (error) {
+      $estado.textContent = error.message;
+    } finally {
+      $dictar.disabled = false;
+    }
+  });
+
+  grabadora.start();
+  $dictar.ariaPressed = 'true';
+  $estado.textContent = 'Escuchando… pulsa «Dictar» otra vez para terminar';
+});
+
 // ── Detalle del producto: reseñas, resumen local y moderación ─────────────
 
 function abrirDetalle(id) {
@@ -217,6 +293,60 @@ function abrirDetalle(id) {
     separarReseñas($reseñas);
   });
 
+  // Reto 5 · runonweb: traducir las reseñas y escuchar el resumen (o la descripción), en local
+  const $avisoLocal = h('p', { className: 'estado', role: 'status' });
+  const $traducir = h('button', { type: 'button' }, 'Traducir al inglés');
+  const $escuchar = h('button', { type: 'button' }, 'Escuchar ▸');
+  const $audio = h('audio', { controls: true, hidden: true });
+  const originales = producto.reseñas.map((reseña) => reseña.texto);
+  let enInglés = false;
+
+  $traducir.addEventListener('click', async () => {
+    const $textos = [...$reseñas.children].map(($reseña) => $reseña.lastElementChild);
+    if (enInglés) {
+      $textos.forEach(($texto, indice) => ($texto.textContent = originales[indice]));
+      enInglés = false;
+      $traducir.textContent = 'Traducir al inglés';
+      return;
+    }
+
+    $traducir.disabled = true;
+    $avisoLocal.textContent = 'Traduciendo en tu navegador…';
+    try {
+      const traducciones = await traducirReseñas(producto, {
+        alProgresar: (porcentaje) => ($avisoLocal.textContent = `Descargando el traductor… ${porcentaje} %`),
+      });
+      $textos.forEach(($texto, indice) => ($texto.textContent = traducciones[indice]));
+      enInglés = true;
+      $traducir.textContent = 'Ver en español';
+      $avisoLocal.textContent = '';
+    } catch (error) {
+      $avisoLocal.textContent = error.message;
+    } finally {
+      $traducir.disabled = false;
+    }
+  });
+
+  $escuchar.addEventListener('click', async () => {
+    const texto = $resumen.querySelector('p')?.textContent.trim() || `${producto.nombre}. ${producto.descripcion}`;
+    $escuchar.disabled = true;
+    $avisoLocal.textContent = 'Poniendo voz en tu navegador…';
+    try {
+      const wav = await leerEnVozAlta(texto, {
+        alProgresar: (porcentaje) => ($avisoLocal.textContent = `Descargando la voz… ${porcentaje} %`),
+      });
+      URL.revokeObjectURL($audio.src);
+      $audio.src = URL.createObjectURL(wav);
+      $audio.hidden = false;
+      $audio.play().catch(() => {});
+      $avisoLocal.textContent = '';
+    } catch (error) {
+      $avisoLocal.textContent = error.message;
+    } finally {
+      $escuchar.disabled = false;
+    }
+  });
+
   const $aviso = h('p', { className: 'estado', role: 'status' });
   const $formulario = h(
     'form',
@@ -265,7 +395,7 @@ function abrirDetalle(id) {
       ),
     ),
     h('h3', {}, `Reseñas (${producto.reseñas.length})`),
-    $resumir,
+    h('div', { className: 'acciones-locales' }, $resumir, $traducir, $escuchar, $avisoLocal, $audio),
     $resumen,
     $verReseñas,
     $reseñas,
