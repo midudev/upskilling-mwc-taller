@@ -84,6 +84,7 @@ export default defineConfig({
   build: { format: 'file' },
   // Las APIs se llaman desde otros orígenes y se protegen con el token del taller
   security: { checkOrigin: false },
+  devToolbar: { enabled: false },
   markdown: {
     shikiConfig: { theme: 'css-variables' },
   },
