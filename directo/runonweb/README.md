@@ -10,6 +10,6 @@ Una foto de la tienda pasa por tres modelos que se ejecutan en el navegador con 
 | 2 | `runonweb/caption` | La descripción de la foto, escribiéndose en español |
 | 3 | `runonweb/tts` | La descripción leída en voz alta |
 
-Los tres modelos pesan unos 800 MB en total. **Ábrelos una vez antes de la charla** (descomenta los tres pasos, pulsa **Todo** y vuelve a empezar): se quedan en la caché del navegador y en directo cargan en segundos.
+Los tres modelos pesan unos 670 MB en total. **Ábrelos una vez antes de la charla** (descomenta los tres pasos, pulsa **Todo** y vuelve a empezar): se quedan en la caché del navegador y en directo cargan en segundos.
 
 Para volver a empezar: `git checkout -- foto.js`.
