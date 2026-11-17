@@ -10,8 +10,8 @@ Este repositorio contiene:
 | --- | --- |
 | `src/` | La web del taller (Astro): inicio, agenda, enunciados de los retos, documentación de las APIs y la presentación |
 | `src/pages/api/` | Las APIs del taller: un proxy de **Jev** y otro de **OpenAI**, protegidos con un token compartido |
-| `retos/` | Los cuatro retos, cada uno con `inicio/`, `solucion/` y su enunciado (`README.md`) |
-| `directo/` | El código de las partes en directo. `directo/liga`: un MCP con los resultados de LaLiga y, después, con interfaz |
+| `retos/` | Los cuatro retos y uno extra (runonweb), cada uno con `inicio/`, `solucion/` y su enunciado (`README.md`) |
+| `directo/` | El código de las partes en directo, en pasos comentados que se descomentan. `directo/liga`: un MCP con los resultados de LaLiga y, después, con interfaz; `directo/jev`: la primera decisión con Jev; `directo/runonweb`: una foto pasa por tres modelos en el navegador |
 
 ## Instalación
 
@@ -42,6 +42,7 @@ pnpm dev
 | `/retos` | Enunciados. Se generan a partir de `retos/*/README.md` |
 | `/apis` | Cómo usar las APIs de Jev y OpenAI |
 | `/slides` | La presentación |
+| `/directo` | Las demos en directo. Las de IA local (`/directo/traductor`, `/directo/chat`, `/directo/runonweb`) descargan sus modelos la primera vez: ábrelas antes de la charla para que queden en la caché |
 
 ### Presentación
 
@@ -88,13 +89,14 @@ Una misma tienda online, cuatro piezas:
 | 2 · WebMCP | `retos/02-webmcp` | `npm install && npm run dev` → `http://localhost:3002` |
 | 3 · Jev | `retos/03-jev` | igual → `http://localhost:3003`; pega el token en `retos/config.js` |
 | 4 · IA local | `retos/04-ia-local` | igual → `http://localhost:3004`. `solucion/` es la aplicación completa |
+| 5 · runonweb (extra) | `retos/05-runonweb` | igual → `http://localhost:3005` |
 
-Los retos 2, 3 y 4 comparten la misma tienda: el `inicio` de cada uno es la `solucion` del anterior. Solo cambian `src/webmcp.js`, `src/jev.js` y `src/ia-local.js`.
+Los retos 2, 3 y 4 comparten la misma tienda: el `inicio` de cada uno es la `solucion` del anterior. Solo cambian `src/webmcp.js`, `src/jev.js` y `src/ia-local.js`. El reto 5 parte de la `solucion` del 4 y le añade `src/runonweb.js` y sus botones (traducir, buscar por significado, dictar y escuchar); si cambias la tienda de los retos 2–4, cópialo también a `retos/05-runonweb`.
 
 Cada reto se arranca desde `inicio/` y su demo tiene dos pestañas, **Tu código** y **Ver solución**, para ver la carpeta `solucion/` funcionando sin arrancar otro servidor:
 
 - Reto 1: el probador (`http://localhost:3001`) habla con `/mcp` o con `/solucion/mcp`, que es el `crearServidor()` de `solucion/server.js`.
-- Retos 2–4: el plugin de Vite `retos/ver-solucion.js` (en el `vite.config.js` de cada `inicio`) sirve la carpeta `solucion` en `/solucion/` (`http://localhost:300N/solucion/`).
+- Retos 2–5: el plugin de Vite `retos/ver-solucion.js` (en el `vite.config.js` de cada `inicio`) sirve la carpeta `solucion` en `/solucion/` (`http://localhost:300N/solucion/`).
 
 En el reto 2, el plugin `retos/asistente/plugin.js` añade a las dos pestañas un chat con `gpt-6-luna` que usa las herramientas WebMCP de la página (`getTools()` + `executeTool()`). Va por el proxy de OpenAI del taller con el token de `retos/config.js` (o, si está vacío, el `WORKSHOP_TOKEN` de `.dev.vars`).
 
