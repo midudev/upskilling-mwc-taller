@@ -5,12 +5,10 @@ import PixelIcon from '../components/PixelIcon.astro';
 import type { IconName } from '../components/pixel-icons';
 import Slide from '../components/Slide.astro';
 import { schedule } from '../data/agenda';
-import { TOKEN_DEL_TALLER } from '../data/taller';
 import '../styles/global.css';
 import '../styles/slides.css';
 
 const theme = 'css-variables';
-const tokenSlide = TOKEN_DEL_TALLER || 'Falta WORKSHOP_TOKEN en .dev.vars';
 
 // Los mismos iconos que en la portada de la web
 const blockIcons: IconName[] = ['mcp-ui', 'webmcp', 'jev', 'ia-local'];
@@ -278,7 +276,7 @@ const salida = await generador(mensajes, { max_new_tokens: 120 });`;
           <li><div class="card-top"><span class="n">03</span><PixelIcon name="jev" size={80} /></div><h3>Jev</h3><p>Decisiones rápidas que el código usa tal cual</p></li>
           <li><div class="card-top"><span class="n">04</span><PixelIcon name="ia-local" size={80} /></div><h3>IA local</h3><p>Modelos que se ejecutan en el navegador</p></li>
         </ol>
-        <p class="foot">Explicación → código en directo → reto guiado. Así cuatro veces.</p>
+        <p class="foot">Explicación → código en directo → reto guiado en el navegador. Así cuatro veces.</p>
       </Slide>
 
       <Slide title="Agenda">
@@ -302,21 +300,15 @@ const salida = await generador(mensajes, { max_new_tokens: 120 });`;
       <Slide title="Antes de empezar">
         <div class="split">
           <ol class="steps">
-            <li><span class="n">1</span><div><h3>Clona el repositorio</h3><p><code>git clone https://github.com/midudev/upskilling-mwc-taller</code><br /><code>cd upskilling-mwc-taller</code></p></div></li>
-            <li><span class="n">2</span><div><h3>Abre la web del taller</h3><p>Agenda, retos y documentación de las APIs</p></div></li>
-            <li><span class="n">3</span><div><h3>Apunta el token</h3><p>Una sola clave para Jev y OpenAI. Caduca al terminar.</p></div></li>
-            <li><span class="n">4</span><div><h3>Comprueba</h3><p>Chrome actualizado · Node.js 22+ · <code>node -v</code></p></div></li>
+            <li><span class="n">1</span><div><h3>Abre la web del taller</h3><p>Agenda, retos y documentación de las APIs</p></div></li>
+            <li><span class="n">2</span><div><h3>Los retos, en el navegador</h3><p>Un editor en la página, el resultado al lado y pasos que se comprueban solos. Nada que instalar</p></div></li>
+            <li><span class="n">3</span><div><h3>Comprueba</h3><p>Chrome actualizado · 16 GB de RAM para la IA local</p></div></li>
           </ol>
           <figure class="qr">
             <img src="/slides/qr-taller.svg" alt="Código QR del repositorio del taller" width="29" height="29" />
             <figcaption><code>midu.link/taller</code></figcaption>
           </figure>
         </div>
-      </Slide>
-
-      <Slide kind="statement" label="Token del taller">
-        <p class="big token" style={`--chars: ${tokenSlide.length}`}>{tokenSlide}</p>
-        <p class="sub">Una sola clave para Jev y OpenAI. Pégala en <code>retos/config.js</code>, sirve para todos los retos.</p>
       </Slide>
 
       <!-- ─────────────── Bloque 1 · MCP UI ─────────────── -->
@@ -434,7 +426,7 @@ const salida = await generador(mensajes, { max_new_tokens: 120 });`;
               <li>Registra el recurso <code>ui://</code></li>
               <li>Haz que el botón «Añadir» llame al servidor</li>
             </ul>
-            <p class="path">retos/01-mcp-ui/inicio · 18 min · <a href="http://localhost:3001" target="_blank" rel="noopener">localhost:3001</a></p>
+            <p class="path"><a href="/retos/01-mcp-ui" target="_blank" rel="noopener">/retos/01-mcp-ui</a> · 10 min · en el navegador</p>
           </div>
           <PixelIcon name="mcp-ui" size={320} class="hero" />
         </div>
@@ -525,11 +517,11 @@ const salida = await generador(mensajes, { max_new_tokens: 120 });`;
             <p class="num">Reto 2</p>
             <h2>La tienda se abre a los agentes</h2>
             <ul>
-              <li>Registra <code>buscar_productos</code>, <code>anadir_al_carrito</code>, <code>ver_producto</code> y <code>vaciar_carrito</code></li>
+              <li>Registra <code>buscar_productos</code>, <code>anadir_al_carrito</code> y <code>vaciar_carrito</code></li>
               <li>Añade las anotaciones que tocan</li>
-              <li>Convierte el formulario de ofertas en una herramienta</li>
+              <li>Pruébalas como un agente, desde el panel «Agente»</li>
             </ul>
-            <p class="path">retos/02-webmcp/inicio · 17 min</p>
+            <p class="path"><a href="/retos/02-webmcp" target="_blank" rel="noopener">/retos/02-webmcp</a> · 10 min · en el navegador</p>
           </div>
           <PixelIcon name="webmcp" size={320} class="hero" />
         </div>
@@ -637,9 +629,9 @@ const salida = await generador(mensajes, { max_new_tokens: 120 });`;
             <ul>
               <li>Búsqueda inteligente: una pregunta <code>score</code> por producto</li>
               <li>Moderación de reseñas con <code>noul</code>, <code>choice</code> y <code>score</code></li>
-              <li>Extra: exponla como herramienta WebMCP</li>
+              <li>Decide con números: tú eliges los umbrales</li>
             </ul>
-            <p class="path">retos/03-jev/inicio · 15 min</p>
+            <p class="path"><a href="/retos/03-jev" target="_blank" rel="noopener">/retos/03-jev</a> · 10 min · en el navegador</p>
           </div>
           <PixelIcon name="jev" size={320} class="hero" />
         </div>
@@ -763,9 +755,9 @@ const salida = await generador(mensajes, { max_new_tokens: 120 });`;
             <ul>
               <li>Comprueba la disponibilidad de <code>Summarizer</code></li>
               <li>Resume en streaming, con progreso de descarga</li>
-              <li>Extra: pros y contras en JSON con la Prompt API</li>
+              <li>Plan B: Qwen3.5 con Transformers.js y WebGPU</li>
             </ul>
-            <p class="path">retos/04-ia-local/inicio · 17 min</p>
+            <p class="path"><a href="/retos/04-ia-local" target="_blank" rel="noopener">/retos/04-ia-local</a> · 10 min · en el navegador</p>
           </div>
           <PixelIcon name="ia-local" size={320} class="hero" />
         </div>
@@ -781,7 +773,7 @@ const salida = await generador(mensajes, { max_new_tokens: 120 });`;
               <li>Busca por significado con embeddings: <code>runonweb/embed</code></li>
               <li>Dicta la búsqueda con Whisper: <code>runonweb/stt</code></li>
             </ul>
-            <p class="path">retos/05-runonweb/inicio · 15 min · <a href="http://localhost:3005" target="_blank" rel="noopener">localhost:3005</a></p>
+            <p class="path"><a href="/retos/05-runonweb" target="_blank" rel="noopener">/retos/05-runonweb</a> · 10 min · en el navegador</p>
           </div>
           <PixelIcon name="browser-ai" size={320} class="hero" />
         </div>

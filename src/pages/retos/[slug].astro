@@ -1,4 +1,6 @@
 ---
+import Editor from '../../components/retos/Editor.astro';
+import { configDelEditor, pasosDelReto } from '../../data/editor';
 import { retos } from '../../data/retos';
 import Base from '../../layouts/Base.astro';
 import '../../styles/flujo.css';
@@ -11,19 +13,27 @@ export function getStaticPaths() {
 }
 
 const { reto, prev, next } = Astro.props;
-const { Content } = reto;
+
+// El enunciado se parte en el comentario <!-- editor -->: lo de antes va encima del editor y el resto, debajo
+const [antes, despues = ''] = (await reto.html()).split('<!-- editor -->');
+const config = reto.editor ? configDelEditor(reto.slug, reto.editor) : null;
 ---
 
 <Base title={`Reto ${reto.bloque}: ${reto.title}`} description={reto.resumen}>
   <p class="label">
-    <a href="/retos">Retos</a> / {reto.extra ? 'Extra' : `Bloque ${reto.bloque}`} · {reto.minutos} min ·
-    <code>retos/{reto.slug}</code>
+    <a href="/retos">Retos</a> / {reto.extra ? 'Extra' : `Bloque ${reto.bloque}`} · {reto.minutos} min · en el navegador
   </p>
   <h1>{reto.title}</h1>
   <p class="resumen muted">{reto.resumen}</p>
 
   <article class="prose">
-    <Content />
+    <Fragment set:html={antes} />
+  </article>
+
+  {config && <Editor config={config} pasos={pasosDelReto(reto.slug)} minutos={reto.minutos} />}
+
+  <article class="prose">
+    <Fragment set:html={despues} />
   </article>
 
   <nav class="pager" aria-label="Otros retos">

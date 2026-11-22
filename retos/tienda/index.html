@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>La Tienda · Taller MWC</title>
+    <link rel="stylesheet" href="./estilos.css" />
+  </head>
+  <body>
+    <header class="cabecera">
+      <span class="marca">la<span>/</span>tienda</span>
+      <p id="aviso" class="aviso" hidden></p>
+    </header>
+
+    <main>
+      <section class="catalogo" aria-label="Catálogo">
+        <form id="filtros" class="filtros">
+          <label>
+            <span>Buscar</span>
+            <input type="search" name="texto" placeholder="teclado, mochila…" autocomplete="off" />
+          </label>
+          <label>
+            <span>Categoría</span>
+            <select name="categoria">
+              <option value="">Todas</option>
+            </select>
+          </label>
+          <label>
+            <span>Precio máximo</span>
+            <input type="number" name="precioMaximo" min="1" step="1" placeholder="€" />
+          </label>
+        </form>
+
+        <!-- Aquí cada reto añade su buscador: Jev, por significado… (main.js) -->
+        <div id="buscador"></div>
+
+        <p id="estado" class="estado" role="status"></p>
+        <ul id="productos" class="productos"></ul>
+      </section>
+
+      <aside class="carrito" aria-label="Carrito">
+        <h2>Carrito</h2>
+        <ul id="lineas"></ul>
+        <p class="total"><span>Total</span><strong id="total">0 €</strong></p>
+        <button id="vaciar" type="button">Vaciar carrito</button>
+      </aside>
+    </main>
+
+    <dialog id="detalle" class="detalle" closedby="any">
+      <form method="dialog"><button class="cerrar" aria-label="Cerrar">×</button></form>
+      <div id="detalle-contenido"></div>
+    </dialog>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

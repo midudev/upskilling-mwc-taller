@@ -1,10 +1,10 @@
 import type { APIRoute } from 'astro'
+import { limitOpenAIRequest, MAX_REASONING_EFFORT, OPENAI_MODEL } from '../../../lib/openai-limits'
 import { env, guard } from '../../../lib/proxy'
 
 export const prerender = false
 
-const DEFAULT_MODEL = 'gpt-6-luna'
-const DEFAULT_REASONING = 'xhigh'
+const DEFAULT_REASONING = MAX_REASONING_EFFORT
 const RESPONSES_URL = 'https://api.openai.com/v1/responses'
 
 const json = (data: unknown, status = 200) =>
@@ -124,10 +124,10 @@ export const POST: APIRoute = async ({ request }) => {
   const blocked = await guard(request)
   if (blocked) return blocked
   try {
-    const { messages, tools, model, reasoning_effort } = (await request.json()) as {
+    // El modelo lo fija el servidor: se ignora el que mande el cliente
+    const { messages, tools, reasoning_effort } = (await request.json()) as {
       messages?: unknown
       tools?: unknown
-      model?: string
       reasoning_effort?: string
     }
 
@@ -142,7 +142,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     const { instructions, input } = chatMessagesToResponses(messages)
     const body: Record<string, unknown> = {
-      model: model || DEFAULT_MODEL,
+      model: OPENAI_MODEL,
       reasoning: { effort: reasoning_effort || DEFAULT_REASONING },
       input,
       store: false,
@@ -153,6 +153,10 @@ export const POST: APIRoute = async ({ request }) => {
       body.tools = toResponsesTools(tools)
       body.tool_choice = 'auto'
     }
+
+    // Los mismos límites que /api/openai: razonamiento, tokens de salida, herramientas, imágenes…
+    const limited = limitOpenAIRequest('responses', body)
+    if (limited) return json({ error: limited.message }, 400)
 
     const upstream = await fetch(RESPONSES_URL, {
       method: 'POST',

@@ -25,8 +25,8 @@ function clientFor(backend: 'jev' | 'laya'): TypeSafeClient {
 }
 
 export const POST: APIRoute = async ({ request }) => {
-	// Con el token del taller, como el resto de las APIs
-	const blocked = await guard(request);
+	// Con el token del taller y los límites de Jev, como /api/jev
+	const blocked = await guard(request, 'jev');
 	if (blocked) return blocked;
 	const body = (await request.json().catch(() => null)) as { state?: JevState; backend?: string } | null;
 	if (!body?.state || typeof body.state !== 'object') {

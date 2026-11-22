@@ -1,0 +1,1141 @@
+---
+// El editor de un reto: los archivos a la izquierda, el resultado a la derecha y los pasos debajo.
+// Todo se ejecuta en el navegador (src/lib/retos/editor.ts): no hay que instalar nada.
+import type { ConfigDelEditor } from '../../lib/retos/tipos';
+
+interface Props {
+  config: ConfigDelEditor;
+  pasos: { titulo: string; archivo: string; todo: string; pistas: string[] }[];
+  minutos: number;
+}
+
+const { config, pasos, minutos } = Astro.props;
+const conAgente = config.paneles.includes('agente');
+const visibles = config.archivos.filter((a) => !a.oculto).sort((a, b) => Number(b.editable) - Number(a.editable));
+// Las pistas admiten `código` entre comillas invertidas
+const trozosDe = (pista: string) => pista.split('`').map((texto, i) => ({ texto, codigo: i % 2 === 1 }));
+// Evita que un "</script>" dentro de los archivos cierre la etiqueta antes de tiempo
+const json = JSON.stringify(config).replaceAll('</', '<\\/');
+---
+
+<section class="editor" data-editor aria-label="Editor del reto">
+  <script type="application/json" data-config set:html={json} />
+
+  <div class="barra">
+    <div class="pestanas" role="tablist" aria-label="Archivos" data-pestanas>
+      {visibles.map((a) => <button type="button" role="tab" class={a.editable ? 'editable' : 'lectura'}>{a.ruta}</button>)}
+    </div>
+    <div class="acciones">
+      <button type="button" class="principal" data-accion="ejecutar" title="Ejecutar (⌘S o Ctrl+S)">
+        ▶ Ejecutar <kbd class="atajo"><kbd data-tecla-mod>⌘</kbd><kbd>S</kbd></kbd>
+      </button>
+      <button type="button" data-accion="solucion" aria-pressed="false">Ver solución</button>
+      <button type="button" data-accion="reiniciar" title="Vuelve al código del principio">Reiniciar</button>
+      <button type="button" data-accion="ampliar" class="icono" aria-pressed="false" aria-label="Pantalla completa" title="Pantalla completa">
+        <svg class="ampliar" viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+          ><path d="M12 3h5v5M8 17H3v-5M17 3l-5.5 5.5M3 17l5.5-5.5"></path></svg
+        >
+        <svg class="reducir" viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+          ><path d="M16 8h-4V4M4 12h4v4M12 8l5-5M8 12l-5 5"></path></svg
+        >
+      </button>
+    </div>
+  </div>
+
+  <div class="cuerpo" data-cuerpo>
+    <div class="lado-codigo" data-lado="codigo">
+      <button type="button" class="plegado-etiqueta" data-restaurar="codigo" title="Mostrar código">
+        <span class="plegado-icono" aria-hidden="true">›</span>
+        <span class="plegado-texto">Código</span>
+      </button>
+      <p class="aviso-solucion" data-aviso-solucion hidden>
+        <span>Estás viendo la <strong>solución</strong>: en verde, lo que va en cada hueco.</span>
+        <button type="button" data-accion="copiar">Copiar a tus huecos</button>
+      </p>
+      <p class="aviso-lectura" data-aviso-lectura hidden>
+        <span class="candado" aria-hidden="true">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6"
+            ><rect x="3" y="7" width="10" height="7.5" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"></path></svg
+          >
+        </span>
+        <span><strong>Solo lectura.</strong> Está aquí para que veas el contexto. Lo que completas está en <span data-editables></span>.</span>
+      </p>
+      <div class="codigo" data-codigo></div>
+      <p class="aviso-bloqueo" data-aviso-bloqueo role="status" hidden>
+        Este código ya está hecho: escribe solo en los huecos <span class="muestra-hueco">✎ amarillos</span>
+      </p>
+    </div>
+
+    <div
+      class="divisor"
+      data-divisor
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Redimensionar código y demo"
+      tabindex="0"
+      title="Arrastra para redimensionar (doble clic para centrar)"
+    ></div>
+
+    <div class="lado-salida" data-lado="salida">
+      <button type="button" class="plegado-etiqueta" data-restaurar="salida" title="Mostrar demo">
+        <span class="plegado-icono" aria-hidden="true">‹</span>
+        <span class="plegado-texto">Demo</span>
+      </button>
+      <div class="pestanas-salida" role="tablist" aria-label="Salida">
+        <button type="button" role="tab" data-salida="resultado" aria-selected="true">Resultado</button>
+        <button type="button" role="tab" data-salida="consola" aria-selected="false">
+          Consola <span class="contador" data-contador-consola hidden>0</span>
+        </button>
+        <span class="en-solucion-etiqueta">solución</span>
+      </div>
+
+      <div class="panel panel-resultado" data-panel="resultado">
+        <div class="vista" data-vista></div>
+        <button type="button" class="error-ejecucion" data-error hidden></button>
+        {
+          conAgente && (
+            <details class="agente" open>
+              <summary>
+                Agente <span class="muted">· lo que ve un agente del navegador en tu tienda</span>
+              </summary>
+              <div data-agente />
+            </details>
+          )
+        }
+      </div>
+      <ol class="panel consola" data-panel="consola" data-consola hidden></ol>
+    </div>
+  </div>
+
+  <div class="pasos">
+    <p class="pasos-cabecera">
+      <span class="label">Pasos · {minutos} min</span>
+      <span class="progreso" data-progreso>0/{pasos.length}</span>
+      <span class="hecho">¡Reto completado!</span>
+      <span class="muted ayuda">Rellena los <code>___</code> de cada hueco y ejecuta: los pasos se comprueban solos. Si te atascas, pide una pista.</span>
+    </p>
+    <ol class="lista-pasos">
+      {
+        pasos.map((paso, indice) => (
+          <li data-paso data-archivo={paso.archivo} data-todo={paso.todo}>
+            <button type="button" class="ir" data-ir title="Ir a su hueco">
+              <span class="estado" aria-hidden="true" />
+              <span class="numero">{indice + 1}</span>
+              <span class="titulo">{paso.titulo}</span>
+              <code class="donde">
+                {paso.archivo} · {paso.todo}
+              </code>
+            </button>
+            <p class="mensaje" />
+            <ul class="pistas" data-pistas>
+              {
+                paso.pistas.map((pista) => (
+                  <li hidden>
+                    {trozosDe(pista).map((trozo) => (trozo.codigo ? <code>{trozo.texto}</code> : trozo.texto))}
+                  </li>
+                ))
+              }
+            </ul>
+            <div class="botones-pista">
+              <button type="button" data-pista>Pista</button>
+              <button type="button" data-rellenar hidden title="Escribe la solución en el hueco (Ctrl+Z para deshacer)">
+                Rellenar con la solución
+              </button>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+
+  <div class="pruebas" data-pruebas aria-hidden="true"></div>
+</section>
+
+<script>
+  import { montarEditor } from '../../lib/retos/editor';
+
+  for (const $editor of document.querySelectorAll<HTMLElement>('[data-editor]')) {
+    montarEditor($editor).catch((error) => {
+      console.error(error);
+      $editor.insertAdjacentHTML('afterbegin', `<p class="fallo">No se ha podido cargar el editor: ${error.message}</p>`);
+    });
+  }
+</script>
+
+<style is:global>
+  .editor {
+    /* Huecos por rellenar: amarillo. Hechos: verde */
+    --hueco: #ffb000;
+    --ok: #3fdc6f;
+    /* Más ancho que el texto de la página: sale del contenedor de 860 px */
+    --ancho: min(100vw - 2rem, 1480px);
+    position: relative;
+    width: var(--ancho);
+    margin-inline: calc((100% - var(--ancho)) / 2);
+    margin-block: 2rem 3rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg);
+    overflow: hidden;
+  }
+
+  /* Barras de scroll finas y sin fondo, como las de macOS */
+  .editor,
+  .editor * {
+    scrollbar-width: thin;
+    scrollbar-color: #ffffff38 transparent;
+  }
+
+  @supports not (scrollbar-color: auto) {
+    .editor ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+      background: transparent;
+    }
+
+    .editor ::-webkit-scrollbar-track,
+    .editor ::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+
+    .editor ::-webkit-scrollbar-thumb {
+      border: 2px solid transparent;
+      border-radius: 999px;
+      background: #ffffff38 padding-box;
+    }
+
+    .editor ::-webkit-scrollbar-thumb:hover {
+      background-color: #ffffff60;
+    }
+  }
+
+  html.con-editor-ampliado {
+    overflow: hidden;
+  }
+
+  .editor.ampliado {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    width: auto;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .editor button {
+    font: inherit;
+    font-size: 0.8rem;
+    color: var(--fg);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 0.35rem 0.7rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .editor button:hover:not(:disabled) {
+    border-color: var(--muted);
+  }
+
+  .editor button.principal {
+    border-color: var(--fg);
+    background: var(--fg);
+    color: var(--bg);
+  }
+
+  .editor button.principal:hover {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .editor.sin-ejecutar button.principal {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .editor button.peligro {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* El atajo: dos teclas pequeñas dentro del botón */
+  .editor .atajo {
+    display: inline-flex;
+    gap: 0.2rem;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
+
+  .editor .atajo kbd {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    padding: 0 0.3rem;
+    border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    font: inherit;
+    font-size: 0.78rem;
+    line-height: 1;
+    opacity: 0.75;
+  }
+
+  .editor .atajo kbd[data-tecla-mod] {
+    font-family: system-ui, sans-serif;
+    font-size: 0.85rem;
+  }
+
+  /* ── Barra: pestañas de archivos y acciones ── */
+
+  .editor .barra {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+
+  .editor .pestanas {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .editor .pestanas button {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.7rem 0.95rem;
+    border: 0;
+    border-right: 1px solid var(--line);
+    border-radius: 0;
+    color: var(--muted);
+  }
+
+  /* Los archivos que se completan: en claro y con el lápiz de los huecos */
+  .editor .pestanas button.editable {
+    color: var(--fg);
+  }
+
+  .editor .pestanas button[aria-selected='true'] {
+    background: var(--bg);
+    box-shadow: inset 0 2px 0 var(--hueco);
+  }
+
+  .editor .pestanas .icono-pestana {
+    display: inline-flex;
+    width: 0.9rem;
+    justify-content: center;
+    color: var(--hueco);
+  }
+
+  .editor .pestanas button.terminado .icono-pestana {
+    color: var(--ok);
+  }
+
+  .editor .pestanas .cambiado {
+    color: var(--hueco);
+  }
+
+  /* Los de solo lectura: apagados, en cursiva y con candado */
+  .editor .pestanas button.lectura {
+    color: #6b6b6b;
+    font-style: italic;
+    background: #0d0d0d;
+  }
+
+  .editor .pestanas button.lectura .icono-pestana {
+    color: #5c5c5c;
+  }
+
+  .editor .pestanas button.lectura:hover {
+    color: var(--muted);
+  }
+
+  .editor .pestanas button.lectura[aria-selected='true'] {
+    color: var(--muted);
+    background: #0b0b0b;
+    box-shadow: inset 0 2px 0 #5c5c5c;
+  }
+
+  .editor .acciones {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.6rem;
+    flex-shrink: 0;
+  }
+
+  .editor .acciones button {
+    display: inline-flex;
+    align-items: center;
+    align-self: stretch;
+  }
+
+  .editor .icono {
+    justify-content: center;
+    min-width: 2.4rem;
+    padding-inline: 0.55rem;
+  }
+
+  .editor .icono svg {
+    display: block;
+  }
+
+  .editor .icono[aria-pressed='true'] .ampliar,
+  .editor .icono[aria-pressed='false'] .reducir {
+    display: none;
+  }
+
+  /* ── Cuerpo: código | resultado ── */
+
+  .editor .cuerpo {
+    display: grid;
+    grid-template-columns: var(--col-codigo, minmax(0, 1.05fr)) 9px var(--col-salida, minmax(0, 1fr));
+    /* Que el editor y los pasos quepan a la vez en la pantalla */
+    height: clamp(420px, calc(100vh - 220px), 860px);
+  }
+
+  .editor.redimensionando {
+    user-select: none;
+    cursor: col-resize;
+  }
+
+  .editor.redimensionando iframe {
+    pointer-events: none;
+  }
+
+  .editor.ampliado .cuerpo {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+  }
+
+  .editor .divisor {
+    position: relative;
+    cursor: col-resize;
+    background: var(--surface);
+    border-inline: 1px solid var(--line);
+    touch-action: none;
+    transition: background 0.15s;
+  }
+
+  .editor .divisor::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    width: 3px;
+    height: 32px;
+    border-radius: 999px;
+    background: var(--line);
+    transition: background 0.15s, height 0.15s;
+  }
+
+  .editor .divisor:hover,
+  .editor .divisor:focus-visible,
+  .editor.redimensionando .divisor {
+    background: #1a1a1a;
+    outline: none;
+  }
+
+  .editor .divisor:hover::after,
+  .editor .divisor:focus-visible::after,
+  .editor.redimensionando .divisor::after {
+    height: 48px;
+    background: var(--hueco);
+  }
+
+  .editor .plegado-etiqueta {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    width: 100%;
+    height: 100%;
+    padding: 0.75rem 0;
+    border: 0;
+    border-radius: 0;
+    background: var(--surface);
+    color: var(--muted);
+  }
+
+  .editor .plegado-etiqueta:hover {
+    color: var(--fg);
+    background: #1a1a1a;
+  }
+
+  .editor .plegado-icono {
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--hueco);
+  }
+
+  .editor .plegado-texto {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: var(--pixel);
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .editor .cuerpo[data-plegado='codigo'] .lado-codigo > :not(.plegado-etiqueta),
+  .editor .cuerpo[data-plegado='salida'] .lado-salida > :not(.plegado-etiqueta) {
+    display: none;
+  }
+
+  .editor .cuerpo[data-plegado='codigo'] .lado-codigo > .plegado-etiqueta,
+  .editor .cuerpo[data-plegado='salida'] .lado-salida > .plegado-etiqueta {
+    display: flex;
+  }
+
+  .editor .lado-codigo {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .editor .codigo {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .editor .aviso-solucion[hidden],
+  .editor .aviso-lectura[hidden],
+  .editor .aviso-bloqueo[hidden] {
+    display: none;
+  }
+
+  /* Un archivo de solo lectura: franja que lo dice y fondo más oscuro */
+  .editor .aviso-lectura {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    padding: 0.5rem 0.9rem;
+    border-bottom: 1px solid var(--line);
+    background: #0b0b0b;
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+
+  .editor .aviso-lectura strong {
+    color: var(--fg);
+  }
+
+  .editor .aviso-lectura .candado {
+    align-self: center;
+    display: inline-flex;
+  }
+
+  .editor .aviso-lectura .enlace {
+    padding: 0;
+    border: 0;
+    color: var(--hueco);
+    font-size: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .editor.en-lectura .codigo,
+  .editor.en-lectura .codigo .cm-editor,
+  .editor.en-lectura .codigo .cm-gutters {
+    background: #0b0b0b;
+  }
+
+  /* Si intentas escribir fuera de un hueco */
+  .editor .aviso-bloqueo {
+    position: absolute;
+    left: 50%;
+    bottom: 1rem;
+    z-index: 5;
+    translate: -50% 0;
+    padding: 0.5rem 0.85rem;
+    border: 1px solid #ffb00066;
+    border-radius: 6px;
+    background: #1d1606;
+    color: #ffd27a;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    box-shadow: 0 8px 24px #000a;
+    pointer-events: none;
+  }
+
+  .editor .muestra-hueco {
+    padding: 0 0.3rem;
+    border-left: 2px solid var(--hueco);
+    background: #ffb00026;
+  }
+
+  .editor .aviso-solucion {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0.9rem;
+    border-bottom: 1px solid var(--line);
+    background: #3fdc6f14;
+    font-size: 0.8rem;
+  }
+
+  .editor.en-solucion .codigo {
+    box-shadow: inset 2px 0 0 var(--ok);
+  }
+
+  .editor .lado-salida {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .editor .pestanas-salida {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .editor .pestanas-salida button {
+    padding: 0.55rem 0.9rem;
+    border: 0;
+    border-radius: 0;
+    color: var(--muted);
+  }
+
+  .editor .pestanas-salida button[aria-selected='true'] {
+    color: var(--fg);
+    box-shadow: inset 0 -2px 0 var(--fg);
+  }
+
+  .editor .contador {
+    display: inline-block;
+    min-width: 1.3em;
+    margin-left: 0.25rem;
+    padding: 0 0.3em;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.7rem;
+    text-align: center;
+  }
+
+  .editor .contador[hidden] {
+    display: none;
+  }
+
+  .editor .en-solucion-etiqueta {
+    display: none;
+    margin-left: auto;
+    margin-right: 0.75rem;
+    padding: 0.1rem 0.5rem;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    color: var(--accent);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .editor.en-solucion .en-solucion-etiqueta {
+    display: inline-block;
+  }
+
+  .editor .panel {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .editor .panel[hidden] {
+    display: none;
+  }
+
+  .editor .panel-resultado {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* El resultado va en claro: se distingue de un vistazo del código, que es oscuro */
+  .editor .vista {
+    flex: 1;
+    min-height: 0;
+    background: #fff;
+  }
+
+  .editor .vista iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  .editor .error-ejecucion {
+    display: block;
+    width: 100%;
+    max-height: 5.5rem;
+    overflow: hidden;
+    padding: 0.55rem 0.9rem;
+    border: 0;
+    border-top: 1px solid #ff3b3066;
+    border-radius: 0;
+    background: #2a0d0b;
+    color: #ffb4ae;
+    text-align: left;
+    white-space: pre-wrap;
+    font-size: 0.78rem;
+  }
+
+  .editor .error-ejecucion[hidden] {
+    display: none;
+  }
+
+  /* ── Agente (reto de WebMCP) ── */
+
+  .editor .agente {
+    max-height: 48%;
+    overflow: auto;
+    border-top: 1px solid var(--line);
+    background: var(--surface);
+    font-size: 0.8rem;
+  }
+
+  .editor .agente summary {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 0.55rem 0.9rem;
+    background: var(--surface);
+    cursor: pointer;
+    font-family: var(--pixel);
+    font-size: 0.95rem;
+  }
+
+  .editor .agente summary .muted {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+  }
+
+  .editor .agente .agente-titulo {
+    padding: 0 0.9rem 0.5rem;
+    color: var(--muted);
+  }
+
+  .editor .agente .agente-herramientas {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .editor .agente .agente-herramientas > li {
+    padding: 0.7rem 0.9rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .editor .agente .agente-nombre {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .editor .agente .agente-nombre code {
+    font-weight: 700;
+  }
+
+  .editor .agente .anotacion {
+    padding: 0 0.4rem;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .editor .agente .anotacion.no-fiable {
+    border-color: #ffb00066;
+    color: #ffb000;
+  }
+
+  .editor .agente .anotacion.consecuencias {
+    border-color: #ff3b3066;
+    color: var(--accent);
+  }
+
+  .editor .agente .agente-descripcion {
+    margin-block: 0.25rem 0.5rem;
+    color: var(--muted);
+  }
+
+  .editor .agente form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 0.5rem;
+  }
+
+  .editor .agente label span {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .editor .agente label b {
+    color: var(--accent);
+  }
+
+  .editor .agente input,
+  .editor .agente select {
+    width: 9.5rem;
+    padding: 0.3rem 0.45rem;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--fg);
+    font: inherit;
+    font-size: 0.78rem;
+  }
+
+  .editor .agente .agente-resultado {
+    margin-top: 0.5rem;
+    max-height: 14rem;
+    overflow: auto;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.75rem;
+    border-color: #3fdc6f44;
+  }
+
+  .editor .agente .agente-resultado.error {
+    border-color: #ff3b3066;
+    color: #ffb4ae;
+  }
+
+  /* ── Consola ── */
+
+  .editor .consola {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+    font-size: 0.78rem;
+    background: var(--surface);
+  }
+
+  .editor .consola li {
+    padding: 0.35rem 0.9rem;
+    border-bottom: 1px solid #1c1c1c;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .editor .consola li.vacia {
+    color: var(--muted);
+  }
+
+  .editor .consola li.warn {
+    background: #2a2109;
+    color: #ffd27a;
+  }
+
+  .editor .consola li.error {
+    background: #2a0d0b;
+    color: #ffb4ae;
+  }
+
+  .editor .consola .enlace,
+  .editor .error-ejecucion .enlace {
+    padding: 0;
+    border: 0;
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    font-size: inherit;
+  }
+
+  /* ── Pasos ── */
+
+  .editor .pasos {
+    padding: 0.9rem 1rem 1rem;
+    border-top: 1px solid var(--line);
+    background: var(--surface);
+  }
+
+  .editor.ampliado .pasos {
+    max-height: 32vh;
+    overflow: auto;
+  }
+
+  .editor .pasos-cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 0.9rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .editor .progreso {
+    font-family: var(--pixel);
+    color: var(--accent);
+  }
+
+  .editor .hecho {
+    display: none;
+    font-family: var(--pixel);
+    color: #3fdc6f;
+  }
+
+  .editor.completado .hecho {
+    display: inline;
+  }
+
+  .editor.completado .progreso {
+    color: #3fdc6f;
+  }
+
+  .editor .ayuda {
+    font-size: 0.75rem;
+    margin-left: auto;
+  }
+
+  .editor .ayuda code {
+    color: var(--hueco);
+  }
+
+  .editor .lista-pasos {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .editor .lista-pasos > li {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--bg);
+  }
+
+  .editor .pasos .ir {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    align-items: baseline;
+    gap: 0.15rem 0.55rem;
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 0;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .editor .pasos .estado {
+    width: 0.9rem;
+    height: 0.9rem;
+    align-self: center;
+    border: 1px solid var(--muted);
+    border-radius: 50%;
+  }
+
+  .editor .pasos .numero {
+    font-family: var(--pixel);
+    color: var(--muted);
+  }
+
+  .editor .pasos .titulo {
+    font-size: 0.85rem;
+  }
+
+  .editor .pasos .donde {
+    grid-column: 3;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .editor .pasos .mensaje {
+    padding: 0 0.75rem 0.55rem 2.6rem;
+    font-size: 0.75rem;
+    color: #ffb4ae;
+    white-space: pre-wrap;
+  }
+
+  .editor .pasos .mensaje:empty {
+    display: none;
+  }
+
+  /* Pistas: de una en una, y al final, rellenar con la solución */
+  .editor .pasos .pistas {
+    list-style: none;
+    margin: 0;
+    padding: 0 0.75rem 0 2.6rem;
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--fg);
+  }
+
+  .editor .pasos .pistas li[hidden] {
+    display: none;
+  }
+
+  .editor .pasos .pistas li {
+    padding: 0.4rem 0.6rem;
+    border-left: 2px solid var(--hueco);
+    background: #ffb0000d;
+    line-height: 1.5;
+  }
+
+  .editor .pasos .pistas code {
+    padding: 0 0.2rem;
+    border: 0;
+    background: #ffffff0f;
+    color: #ffd27a;
+    font-size: inherit;
+  }
+
+  .editor .pasos .botones-pista {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: auto;
+    padding: 0.5rem 0.75rem 0.65rem 2.6rem;
+  }
+
+  .editor .pasos .botones-pista button {
+    padding: 0.2rem 0.55rem;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  .editor .pasos .botones-pista button[hidden] {
+    display: none;
+  }
+
+  .editor .pasos [data-pista]::before {
+    content: '? ';
+    color: var(--hueco);
+  }
+
+  .editor .pasos [data-rellenar] {
+    border-color: #ffb00066;
+  }
+
+  .editor .pasos li[data-estado='ok'] .pistas,
+  .editor .pasos li[data-estado='ok'] .botones-pista,
+  .editor.en-solucion .pasos li .pistas,
+  .editor.en-solucion .pasos li .botones-pista,
+  .editor.en-solucion .pasos li .mensaje {
+    display: none;
+  }
+
+  .editor .lista-pasos > li[data-estado='ok'],
+  .editor.en-solucion .lista-pasos > li {
+    border-color: #3fdc6f55;
+  }
+
+  .editor .pasos li[data-estado='ok'] .estado,
+  .editor.en-solucion .pasos li .estado {
+    border-color: #3fdc6f;
+    background: #3fdc6f;
+    box-shadow: inset 0 0 0 2px var(--bg);
+  }
+
+  .editor .pasos li[data-estado='ok'] .numero,
+  .editor.en-solucion .pasos li .numero {
+    color: #3fdc6f;
+  }
+
+  .editor .pasos li[data-estado='falla'] .estado {
+    border-color: var(--accent);
+  }
+
+  .editor .pasos li[data-comprobando] .estado {
+    border-color: var(--muted);
+    border-style: dashed;
+    background: none;
+    box-shadow: none;
+    animation: girar 1.2s linear infinite;
+  }
+
+  @keyframes girar {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  /* El iframe de las comprobaciones: fuera de la pantalla, pero con tamaño para que todo se pinte */
+  .editor .pruebas {
+    position: absolute;
+    left: -10000px;
+    top: 0;
+    width: 1100px;
+    height: 800px;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .editor .pruebas iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  .editor .fallo {
+    padding: 1rem;
+    color: #ffb4ae;
+  }
+
+  @media (max-width: 900px) {
+    .editor .cuerpo {
+      grid-template-columns: 1fr;
+      grid-template-rows: 58vh 70vh;
+      height: auto;
+    }
+
+    .editor .divisor,
+    .editor .plegado-etiqueta {
+      display: none !important;
+    }
+
+    .editor .cuerpo[data-plegado='codigo'] .lado-codigo > :not(.plegado-etiqueta),
+    .editor .cuerpo[data-plegado='salida'] .lado-salida > :not(.plegado-etiqueta) {
+      display: revert;
+    }
+
+    .editor .lado-codigo {
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .editor .barra {
+      flex-direction: column;
+    }
+
+    .editor .acciones {
+      padding-top: 0;
+      flex-wrap: wrap;
+    }
+
+    .editor .atajo,
+    .editor .ayuda {
+      display: none;
+    }
+  }
+</style>

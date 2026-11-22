@@ -1,5 +1,4 @@
 packages:
-  - retos/*/*
   - directo/*/*
 allowBuilds:
   esbuild: true

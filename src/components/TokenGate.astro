@@ -1,0 +1,402 @@
+---
+import PixelIcon from './PixelIcon.astro';
+
+interface Props {
+  /** 'bar' muestra la barra superior si falta el token (Base.astro); 'modal' solo usa el diálogo (Directo.astro) */
+  mode?: 'bar' | 'modal';
+  /** Si es true, abre el diálogo automáticamente cuando no hay token guardado */
+  autoOpen?: boolean;
+}
+
+const { mode = 'bar', autoOpen = false } = Astro.props;
+---
+
+<div class="token-gate" data-token-gate data-mode={mode} data-auto-open={autoOpen ? 'true' : undefined}>
+  {
+    mode === 'bar' && (
+      <div class="token-bar" data-token-bar hidden>
+        <div class="token-bar-inner">
+          <div class="token-bar-copy">
+            <PixelIcon name="key" size={18} />
+            <span>
+              <strong>Token del taller</strong>
+              <span class="token-bar-hint"> · introdúcelo una vez para activar los retos y demos</span>
+            </span>
+          </div>
+          <form class="token-bar-form" data-token-form="bar">
+            <input
+              type="text"
+              name="token"
+              placeholder="Escribe el token…"
+              autocomplete="off"
+              autocapitalize="characters"
+              spellcheck="false"
+              aria-label="Token del taller"
+            />
+            <button type="submit">Guardar</button>
+          </form>
+          <p class="token-msg" data-token-msg="bar" role="status" hidden />
+        </div>
+      </div>
+    )
+  }
+
+  <dialog class="token-dialog" data-token-dialog aria-labelledby="token-dialog-title">
+    <div class="token-dialog-head">
+      <div class="token-dialog-title">
+        <PixelIcon name="key" size={20} />
+        <h2 id="token-dialog-title">Token del taller</h2>
+      </div>
+      <button type="button" class="token-close" data-token-close aria-label="Cerrar">✕</button>
+    </div>
+
+    <p class="token-dialog-desc">
+      Introduce el token que compartimos en el taller. Se guardará en este navegador para todos los retos y demos.
+    </p>
+
+    <form class="token-dialog-form" data-token-form="dialog">
+      <input
+        type="text"
+        name="token"
+        placeholder="Escribe el token…"
+        autocomplete="off"
+        autocapitalize="characters"
+        spellcheck="false"
+        aria-label="Token del taller"
+      />
+      <div class="token-dialog-actions">
+        <button type="submit" class="primary">Guardar token</button>
+        <button type="button" class="danger" data-token-clear hidden>Borrar</button>
+      </div>
+      <p class="token-msg" data-token-msg="dialog" role="status" hidden></p>
+    </form>
+  </dialog>
+</div>
+
+<script>
+  import { clearToken, getToken, setToken, TOKEN_CHANGE_EVENT, TOKEN_REQUEST_EVENT, validarToken } from '../lib/token';
+
+  const $root = document.querySelector<HTMLElement>('[data-token-gate]');
+  if ($root) {
+    const $bar = $root.querySelector<HTMLElement>('[data-token-bar]');
+    const $dialog = $root.querySelector<HTMLDialogElement>('[data-token-dialog]')!;
+    const $close = $root.querySelector<HTMLButtonElement>('[data-token-close]')!;
+    const $clear = $root.querySelector<HTMLButtonElement>('[data-token-clear]')!;
+    const $dialogInput = $dialog.querySelector<HTMLInputElement>('input[name="token"]')!;
+    const autoOpen = $root.dataset.autoOpen === 'true';
+
+    function syncUI() {
+      const token = getToken();
+      const tieneToken = Boolean(token);
+
+      if ($bar) $bar.hidden = tieneToken;
+      $clear.hidden = !tieneToken;
+
+      for (const $btn of document.querySelectorAll<HTMLElement>('[data-abrir-token]')) {
+        $btn.dataset.hasToken = tieneToken ? 'true' : 'false';
+        const $estado = $btn.querySelector<HTMLElement>('[data-token-estado]');
+        if ($estado) $estado.textContent = tieneToken ? '✓' : '·';
+        $btn.title = tieneToken ? 'Token guardado (clic para cambiar o borrar)' : 'Introducir token del taller';
+      }
+    }
+
+    function abrirDialogo() {
+      const actual = getToken();
+      $dialogInput.value = actual;
+      const $msg = $root!.querySelector<HTMLElement>('[data-token-msg="dialog"]');
+      if ($msg) {
+        $msg.hidden = true;
+        $msg.textContent = '';
+      }
+      if (!$dialog.open) $dialog.showModal();
+      $dialogInput.focus();
+      $dialogInput.select();
+    }
+
+    function setMensaje(origen: string, texto: string, tipo: 'ok' | 'error' | 'info') {
+      const $msg = $root!.querySelector<HTMLElement>(`[data-token-msg="${origen}"]`);
+      if (!$msg) return;
+      $msg.textContent = texto;
+      $msg.dataset.tipo = tipo;
+      $msg.hidden = !texto;
+    }
+
+    for (const $form of $root.querySelectorAll<HTMLFormElement>('[data-token-form]')) {
+      const origen = $form.dataset.tokenForm!;
+      const $input = $form.querySelector<HTMLInputElement>('input[name="token"]')!;
+      const $submit = $form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+      const textoOriginal = $submit.textContent ?? 'Guardar';
+
+      $form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const valor = $input.value.trim();
+        if (!valor) {
+          setMensaje(origen, 'Escribe el token del taller.', 'error');
+          $input.focus();
+          return;
+        }
+
+        $submit.disabled = true;
+        $submit.textContent = 'Comprobando…';
+        setMensaje(origen, '', 'info');
+
+        const resultado = await validarToken(valor);
+
+        $submit.disabled = false;
+        $submit.textContent = textoOriginal;
+
+        if (!resultado.ok) {
+          setMensaje(origen, resultado.error ?? 'Token no válido.', 'error');
+          $input.focus();
+          $input.select();
+          return;
+        }
+
+        setToken(valor.toUpperCase());
+        setMensaje(origen, '✓ Token guardado en este navegador.', 'ok');
+        if (origen === 'dialog') {
+          window.setTimeout(() => {
+            if ($dialog.open) $dialog.close();
+          }, 450);
+        }
+      });
+    }
+
+    $close.addEventListener('click', () => $dialog.close());
+    $dialog.addEventListener('click', (event) => {
+      if (event.target === $dialog) $dialog.close();
+    });
+
+    $clear.addEventListener('click', () => {
+      clearToken();
+      $dialogInput.value = '';
+      setMensaje('dialog', 'Token borrado.', 'info');
+      $dialogInput.focus();
+    });
+
+    document.addEventListener('click', (event) => {
+      const $trigger = (event.target as Element | null)?.closest('[data-abrir-token]');
+      if ($trigger) abrirDialogo();
+    });
+
+    window.addEventListener(TOKEN_CHANGE_EVENT, syncUI);
+    window.addEventListener(TOKEN_REQUEST_EVENT, abrirDialogo);
+    window.addEventListener('storage', (event) => {
+      if (event.key === 'taller:token') syncUI();
+    });
+
+    syncUI();
+
+    if (autoOpen && !getToken()) {
+      abrirDialogo();
+    }
+  }
+</script>
+
+<style>
+  .token-bar {
+    width: min(100% - 3rem, 860px);
+    margin: 0 auto 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface, #111111);
+    border: 1px solid color-mix(in srgb, var(--accent, #ff3b30) 45%, var(--line, #262626));
+    border-radius: 6px;
+    font-family: var(--mono, var(--font-mono, monospace));
+    font-size: 0.85rem;
+    color: var(--fg, #ededed);
+  }
+
+  .token-bar-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.65rem 1rem;
+  }
+
+  .token-bar-copy {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-width: 0;
+  }
+
+  .token-bar-hint {
+    color: var(--muted, #8f8f8f);
+  }
+
+  .token-bar-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1 1 220px;
+    max-width: 300px;
+  }
+
+  .token-bar-form input,
+  .token-dialog-form input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.45rem 0.7rem;
+    font: inherit;
+    font-size: 0.85rem;
+    color: var(--fg, #ededed);
+    background: var(--bg, #0a0a0a);
+    border: 1px solid var(--line, #262626);
+    border-radius: 4px;
+    letter-spacing: 0.06em;
+  }
+
+  .token-bar-form input:focus,
+  .token-dialog-form input:focus {
+    outline: none;
+    border-color: var(--accent, #ff3b30);
+  }
+
+  .token-bar-form button,
+  .token-dialog-actions button {
+    padding: 0.45rem 0.85rem;
+    font: inherit;
+    font-size: 0.82rem;
+    color: #fff;
+    background: var(--accent, #ff3b30);
+    border: 1px solid var(--accent, #ff3b30);
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .token-bar-form button:hover,
+  .token-dialog-actions button.primary:hover {
+    filter: brightness(1.1);
+  }
+
+  .token-bar-form button:disabled,
+  .token-dialog-actions button:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+
+  .token-msg {
+    width: 100%;
+    margin: 0;
+    font-size: 0.8rem;
+  }
+
+  .token-msg[data-tipo='error'] {
+    color: var(--accent, #ff3b30);
+  }
+
+  .token-msg[data-tipo='ok'] {
+    color: #3fdc6f;
+  }
+
+  .token-msg[data-tipo='info'] {
+    color: var(--muted, #8f8f8f);
+  }
+
+  .token-dialog {
+    width: min(100% - 2rem, 420px);
+    padding: 1.4rem 1.5rem;
+    background: #111111;
+    color: #ededed;
+    border: 1px solid #2c2c2c;
+    border-radius: 8px;
+    font-family: var(--mono, var(--font-mono, monospace));
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65);
+  }
+
+  .token-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(4px);
+  }
+
+  .token-dialog-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .token-dialog-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .token-dialog h2 {
+    margin: 0;
+    font-family: var(--pixel, var(--font-pixel, monospace));
+    font-size: 1.35rem;
+    font-weight: 500;
+    line-height: 1.1;
+  }
+
+  .token-close {
+    background: transparent;
+    border: 1px solid #2c2c2c;
+    border-radius: 4px;
+    color: #8f8f8f;
+    font: inherit;
+    font-size: 0.85rem;
+    width: 1.8rem;
+    height: 1.8rem;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+  }
+
+  .token-close:hover {
+    color: #ededed;
+    border-color: #555;
+  }
+
+  .token-dialog-desc {
+    margin: 0 0 1.1rem;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: #a1a1a1;
+  }
+
+  .token-dialog-form {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .token-dialog-form input {
+    background: #0a0a0a;
+    color: #ededed;
+    border-color: #2c2c2c;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.95rem;
+  }
+
+  .token-dialog-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .token-dialog-actions button.danger {
+    background: transparent;
+    border-color: #2c2c2c;
+    color: #a1a1a1;
+  }
+
+  .token-dialog-actions button.danger:hover {
+    border-color: var(--accent, #ff3b30);
+    color: var(--accent, #ff3b30);
+  }
+
+  @media (max-width: 640px) {
+    .token-bar-hint {
+      display: none;
+    }
+
+    .token-bar-form {
+      max-width: none;
+      width: 100%;
+    }
+  }
+</style>

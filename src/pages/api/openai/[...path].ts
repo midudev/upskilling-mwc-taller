@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { limitOpenAIRequest, OPENAI_MODEL } from '../../../lib/openai-limits';
 import { env, error, guard, json, passthrough, preflight } from '../../../lib/proxy';
 
 export const prerender = false;
@@ -7,13 +8,6 @@ const UPSTREAM = 'https://api.openai.com';
 
 // Endpoints de OpenAI disponibles en el taller
 const POST_ROUTES = new Set(['v1/chat/completions', 'v1/responses']);
-
-function allowedModels(): string[] {
-  return (env.OPENAI_MODELS ?? 'gpt-6-luna')
-    .split(',')
-    .map((model) => model.trim())
-    .filter(Boolean);
-}
 
 export const OPTIONS: APIRoute = () => preflight();
 
@@ -25,7 +19,7 @@ export const GET: APIRoute = async ({ request, params }) => {
 
   return json({
     object: 'list',
-    data: allowedModels().map((id) => ({ id, object: 'model', owned_by: 'openai' })),
+    data: [{ id: OPENAI_MODEL, object: 'model', owned_by: 'openai' }],
   });
 };
 
@@ -47,15 +41,13 @@ export const POST: APIRoute = async ({ request, params }) => {
     return error(400, 'El cuerpo de la petición debe ser JSON válido.');
   }
 
-  const models = allowedModels();
-  payload.model ??= models[0];
-  if (typeof payload.model !== 'string' || !models.includes(payload.model)) {
-    return error(
-      400,
-      `Modelo no disponible en el taller. Modelos permitidos: ${models.join(', ')}.`,
-      'model_not_allowed',
-    );
+  if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) {
+    return error(400, 'El cuerpo de la petición debe ser un objeto JSON.');
   }
+
+  // Modelo único y techo de gasto por petición (ver src/lib/openai-limits.ts)
+  const limited = limitOpenAIRequest(path === 'v1/chat/completions' ? 'chat' : 'responses', payload);
+  if (limited) return error(400, limited.message, limited.type);
 
   const upstream = await fetch(`${UPSTREAM}/${path}`, {
     method: 'POST',

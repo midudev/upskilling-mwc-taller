@@ -4,6 +4,8 @@ import path from 'node:path';
 import { defineConfig, fontProviders } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
 import react from '@astrojs/react';
+import { vendorDeLosRetos } from './scripts/vendor-retos.mjs';
+import { PAQUETES } from './src/lib/retos/paquetes.js';
 
 // Fuentes subseteadas con `pnpm fonts` (scripts/subset-fonts.sh). Astro las sirve con hash en
 // /_astro/fonts/ (caché inmutable), inyecta el @font-face en línea y genera fallbacks con métricas
@@ -76,6 +78,18 @@ function fuentesTrasReiniciar() {
   };
 }
 
+// El editor de /retos ejecuta tu código en el navegador: los paquetes de npm que importa (el SDK de MCP,
+// Transformers.js, runonweb…) se empaquetan en public/retos/vendor antes de arrancar o compilar.
+function vendorRetos() {
+  return {
+    name: 'vendor-retos',
+    hooks: {
+      /** @param {{ logger: { info(m: string): void } }} opciones */
+      'astro:config:setup': ({ logger }) => vendorDeLosRetos({ log: logger }),
+    },
+  };
+}
+
 // Las páginas se prerenderizan (estáticas). Solo /api/* (y /directo/entradas) se ejecutan en el Worker.
 export default defineConfig({
   adapter: cloudflare(),
@@ -89,13 +103,16 @@ export default defineConfig({
     shikiConfig: { theme: 'css-variables' },
   },
   // El traductor de /directo/traductor es un componente de React (client:only)
-  integrations: [react()],
+  integrations: [react(), vendorRetos()],
   vite: {
     plugins: [romDeMario(), fuentesTrasReiniciar(), sinWasmDeOnnx()],
     // Los workers de Mario (futuros simulados), de Whisper y del chat local son módulos ES
     worker: { format: 'es', plugins: () => [sinWasmDeOnnx()] },
     // Sin esto, Vite descubre estas dependencias al abrir la página y recarga a mitad de la demo
     optimizeDeps: {
+      // Los archivos de los retos (retos/*/editor) importan paquetes que se ejecutan en el iframe del editor,
+      // no en la web: los sirve public/retos/vendor. Vite los encuentra al rastrear el proyecto y no debe tocarlos
+      exclude: Object.keys(PAQUETES).filter((paquete) => paquete.startsWith('@modelcontextprotocol/') || ['runonweb/embed', 'runonweb/stt'].includes(paquete)),
       include: [
         'jsnes',
         '@huggingface/transformers',

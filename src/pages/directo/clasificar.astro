@@ -1,7 +1,6 @@
 ---
 // La demo en directo de Jev. El código que se descomenta está en directo/jev/clasificar.js;
 // esta página solo pinta lo que devuelva.
-import { TOKEN_DEL_TALLER } from '../../data/taller';
 import PixelIcon from '../../components/PixelIcon.astro';
 import type { IconName } from '../../components/pixel-icons';
 import Base from '../../layouts/Base.astro';
@@ -20,8 +19,6 @@ const ejemplos = [
 ---
 
 <Base title="Clasificar con Jev">
-  <meta slot="head" name="token-taller" content={TOKEN_DEL_TALLER} />
-
   <h1>Clasificar con Jev</h1>
   <p id="estado" class="muted" role="status"></p>
 

@@ -35,38 +35,18 @@ const bloques: { n: number; title: string; text: string; href: string; icon: Ico
   },
 ];
 
-const instalar = [
+const requisitos: { title: string; text: string; links?: { label: string; href: string }[] }[] = [
   {
-    title: 'Node.js',
-    text: 'La versión 22 o superior. Si no sabes cuál elegir, descarga la LTS.',
-    links: [{ label: 'nodejs.org', href: 'https://nodejs.org/es/download' }],
-    check: 'node -v',
-  },
-  {
-    title: 'Visual Studio Code',
-    text: 'El editor que usaremos en el taller. Si ya tienes otro con el que estés a gusto, también vale.',
-    links: [{ label: 'code.visualstudio.com', href: 'https://code.visualstudio.com/' }],
-  },
-  {
-    title: 'Google Chrome',
-    text: 'Actualizado a la última versión: lo necesitamos para WebMCP y para la IA integrada en el navegador.',
-    links: [{ label: 'google.com/chrome', href: 'https://www.google.com/chrome/' }],
-  },
-  {
-    title: 'Git',
-    text: 'Para descargar el repositorio con los retos. En macOS puede que ya lo tengas.',
-    links: [{ label: 'git-scm.com', href: 'https://git-scm.com/downloads' }],
-    check: 'git --version',
-  },
-  {
-    title: 'Un agente de código',
-    optional: true,
-    text: 'No es imprescindible, pero ayuda. Durante el taller se facilita un token para las APIs.',
+    title: 'Chrome, Brave o cualquier navegador Chromium',
+    text: 'Actualizado a la última versión: lo necesitamos para la IA integrada en el navegador.',
     links: [
-      { label: 'Claude Code', href: 'https://claude.com/product/claude-code' },
-      { label: 'Codex', href: 'https://openai.com/codex/' },
-      { label: 'Cursor', href: 'https://cursor.com/' },
+      { label: 'google.com/chrome', href: 'https://www.google.com/chrome/' },
+      { label: 'brave.com', href: 'https://brave.com/' },
     ],
+  },
+  {
+    title: 'Tu portátil',
+    text: 'Recomendado 16 GB de RAM, por los modelos de IA que se ejecutan en local en el navegador.',
   },
 ];
 ---
@@ -77,7 +57,6 @@ const instalar = [
     <h1>Webs listas<br />con la <span class="accent">IA</span></h1>
     <div class="cta">
       <a class="button primary" href="/retos">Empezar los retos</a>
-      <a class="button" href="/apis">APIs del taller</a>
       <a class="button" href="/slides">Slides</a>
     </div>
   </section>
@@ -111,31 +90,25 @@ const instalar = [
   </section>
 
   <section>
-    <h2>Qué instalar</h2>
-    <p class="muted intro">Trae tu portátil (recomendado: 16 GB de RAM) con esto listo:</p>
+    <h2>Qué necesitas</h2>
+    <p class="muted intro">Nada que instalar: todos los retos se hacen directamente aquí, en el navegador.</p>
     <ol class="pasos">
       {
-        instalar.map((paso, i) => (
+        requisitos.map((paso, i) => (
           <li>
             <span class="n">0{i + 1}</span>
             <div>
-              <h3>
-                {paso.title}
-                {paso.optional && <span class="tag">Opcional</span>}
-              </h3>
+              <h3>{paso.title}</h3>
               <p class="muted">{paso.text}</p>
-              <p class="links">
-                {paso.links.map((link) => (
-                  <a href={link.href} target="_blank" rel="noopener noreferrer">
-                    {link.label} ↗
-                  </a>
-                ))}
-                {paso.check && (
-                  <span class="check">
-                    Comprueba: <code>{paso.check}</code>
-                  </span>
-                )}
-              </p>
+              {paso.links && (
+                <p class="links">
+                  {paso.links.map((link) => (
+                    <a href={link.href} target="_blank" rel="noopener noreferrer">
+                      {link.label} ↗
+                    </a>
+                  ))}
+                </p>
+              )}
             </div>
           </li>
         ))
@@ -274,22 +247,8 @@ const instalar = [
   }
 
   .pasos h3 {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
     font-size: 1.4rem;
     margin-bottom: 0.4rem;
-  }
-
-  .pasos .tag {
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    padding: 0.1em 0.5em;
   }
 
   .pasos p {
@@ -302,9 +261,5 @@ const instalar = [
     align-items: baseline;
     gap: 0.4rem 1.25rem;
     margin-top: 0.6rem;
-  }
-
-  .check {
-    color: var(--muted);
   }
 </style>

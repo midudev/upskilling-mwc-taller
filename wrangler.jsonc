@@ -7,21 +7,35 @@
   "observability": { "enabled": true },
 
   // Variables públicas (no secretas). Los secretos van con `wrangler secret put`.
+  // El modelo de OpenAI (gpt-6-luna) y los límites de coste van fijos en src/lib/openai-limits.ts, no aquí.
   "vars": {
-    // Modelos de OpenAI que pueden usar los asistentes (el primero es el modelo por defecto)
-    "OPENAI_MODELS": "gpt-6-luna",
     "JEV_DEFAULT_MODEL": "jev-latest"
   },
 
-  // Límite por IP a las APIs del taller. Toda la sala sale a internet por la misma Wi-Fi (misma IP),
-  // así que el límite es para la sala entera, no por persona: 300 peticiones cada 10 s (~1.800/min,
-  // pensado para más de 100 personas, unas 150 con margen). Ventanas de 10 s: si alguien deja un bucle, el bloqueo dura poco.
-  // Si cambias `period`, actualiza RATE_LIMIT_PERIOD en src/lib/proxy.ts.
+  // Límite por IP a las APIs del taller. Tras el taller, cada IP es una persona: dos ventanas,
+  // una de ráfaga (10 peticiones cada 10 s) y otra sostenida (30 por minuto). Cloudflare solo
+  // admite `period` de 10 o 60 s. Jev tiene contadores propios con algo más de margen (15 cada 10 s
+  // y 50 por minuto). Si cambias un `limit` o un `period`, actualiza RATE_LIMITS en src/lib/proxy.ts.
   "ratelimits": [
     {
       "name": "RATE_LIMITER",
       "namespace_id": "1001",
-      "simple": { "limit": 300, "period": 10 }
+      "simple": { "limit": 10, "period": 10 }
+    },
+    {
+      "name": "RATE_LIMITER_MINUTE",
+      "namespace_id": "1002",
+      "simple": { "limit": 30, "period": 60 }
+    },
+    {
+      "name": "RATE_LIMITER_JEV",
+      "namespace_id": "1003",
+      "simple": { "limit": 15, "period": 10 }
+    },
+    {
+      "name": "RATE_LIMITER_JEV_MINUTE",
+      "namespace_id": "1004",
+      "simple": { "limit": 50, "period": 60 }
     }
   ]
 }

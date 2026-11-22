@@ -18,7 +18,7 @@ const zoneParamDescription =
 	'Zona del estadio: ' + ZONES.map((z) => `${z.id} = ${z.name} (${z.detail})`).join('; ');
 ---
 
-<Layout title="Entradas · Spotify Camp Nou" description="Compra tus entradas para los partidos del FC Barcelona en el Spotify Camp Nou." icon={HOME_CREST} light>
+<Layout title="Entradas · Spotify Camp Nou" description="Compra tus entradas para los partidos del FC Barcelona en el Spotify Camp Nou." icon={HOME_CREST} light requiereToken>
 	<div class="cn">
 		<div class="utility">
 			<div class="wrap utility-row">
@@ -2884,8 +2884,7 @@ const zoneParamDescription =
 			body: JSON.stringify({
 				messages: history,
 				tools: openAiTools,
-				model: 'gpt-6-luna',
-				reasoning_effort: 'xhigh',
+				// El modelo y el razonamiento (como mucho medium) los fija el servidor
 			}),
 		});
 		if (!res.ok) {

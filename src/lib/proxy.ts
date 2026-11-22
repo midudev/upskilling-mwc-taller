@@ -8,9 +8,11 @@ interface WorkshopEnv {
   WORKSHOP_TOKEN?: string;
   OPENAI_API_KEY?: string;
   TYPESAFE_API_KEY?: string;
-  OPENAI_MODELS?: string;
   JEV_DEFAULT_MODEL?: string;
   RATE_LIMITER?: RateLimiter;
+  RATE_LIMITER_MINUTE?: RateLimiter;
+  RATE_LIMITER_JEV?: RateLimiter;
+  RATE_LIMITER_JEV_MINUTE?: RateLimiter;
 }
 
 export const env = cfEnv as unknown as WorkshopEnv;
@@ -18,8 +20,23 @@ export const env = cfEnv as unknown as WorkshopEnv;
 /** Tamaño máximo del cuerpo de una petición a las APIs del taller. */
 export const MAX_BODY_BYTES = 256 * 1024;
 
-/** Ventana del límite de peticiones en segundos (debe coincidir con `ratelimits` en wrangler.jsonc). */
-const RATE_LIMIT_PERIOD = 10;
+/**
+ * Límites por IP, de la ventana corta a la larga. Jev tiene sus propios contadores (y algo más
+ * de margen), separados de los de OpenAI. `period` en segundos: debe coincidir con `ratelimits`
+ * en wrangler.jsonc (se usa para el Retry-After del 429).
+ */
+const RATE_LIMITS = {
+  default: [
+    { binding: 'RATE_LIMITER', period: 10, message: 'Has superado las 10 peticiones en 10 s.' },
+    { binding: 'RATE_LIMITER_MINUTE', period: 60, message: 'Has superado las 30 peticiones por minuto.' },
+  ],
+  jev: [
+    { binding: 'RATE_LIMITER_JEV', period: 10, message: 'Has superado las 15 peticiones a Jev en 10 s.' },
+    { binding: 'RATE_LIMITER_JEV_MINUTE', period: 60, message: 'Has superado las 50 peticiones a Jev por minuto.' },
+  ],
+} as const;
+
+export type RateLimitProfile = keyof typeof RATE_LIMITS;
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -49,21 +66,24 @@ export function error(status: number, message: string, type = 'workshop_error'):
   return json({ error: { message, type, code: status } }, status);
 }
 
+/** Token interno del taller. No se expone en el cliente: la gente lo escribe en la web y se guarda en localStorage. */
+const INTERNAL_WORKSHOP_TOKEN = 'MIDULL';
+
+export function isValidToken(token: string): boolean {
+  return token.trim().toUpperCase() === INTERNAL_WORKSHOP_TOKEN;
+}
+
 /**
  * Comprueba el token del taller y el límite de peticiones.
  * Devuelve una Response si hay que cortar la petición, o null si puede continuar.
  */
-export async function guard(request: Request): Promise<Response | null> {
-  if (!env.WORKSHOP_TOKEN) {
-    return error(500, 'El servidor no tiene configurado WORKSHOP_TOKEN.');
-  }
-
+export async function guard(request: Request, profile: RateLimitProfile = 'default'): Promise<Response | null> {
   const auth = request.headers.get('authorization') ?? '';
   const token = auth.replace(/^Bearer\s+/i, '').trim();
-  if (token !== env.WORKSHOP_TOKEN) {
+  if (!isValidToken(token)) {
     return error(
       401,
-      'Token del taller no válido. Envía la cabecera "Authorization: Bearer <TOKEN_DEL_TALLER>".',
+      'Token del taller no válido. Introduce el token del taller en la web o envía "Authorization: Bearer <TOKEN>".',
       'invalid_token',
     );
   }
@@ -73,17 +93,15 @@ export async function guard(request: Request): Promise<Response | null> {
     return error(413, `La petición supera el máximo de ${MAX_BODY_BYTES / 1024} KB.`);
   }
 
-  if (env.RATE_LIMITER) {
-    const ip = request.headers.get('cf-connecting-ip') ?? 'local';
-    const { success } = await env.RATE_LIMITER.limit({ key: ip });
+  const ip = request.headers.get('cf-connecting-ip') ?? 'local';
+  for (const { binding, period, message } of RATE_LIMITS[profile]) {
+    const limiter = env[binding];
+    if (!limiter) continue;
+    const { success } = await limiter.limit({ key: ip });
     if (!success) {
-      const response = error(
-        429,
-        'Demasiadas peticiones desde esta red (la Wi-Fi del taller se comparte). Espera unos segundos y vuelve a intentarlo.',
-        'rate_limit',
-      );
+      const response = error(429, `${message} Espera ${period} s y vuelve a intentarlo.`, 'rate_limit');
       // El SDK de OpenAI reintenta solo respetando Retry-After
-      response.headers.set('retry-after', String(RATE_LIMIT_PERIOD));
+      response.headers.set('retry-after', String(period));
       return response;
     }
   }

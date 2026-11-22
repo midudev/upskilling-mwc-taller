@@ -1,8 +1,12 @@
 ---
 title: Jev
 bloque: 3
-minutos: 15
+minutos: 10
 resumen: Decisiones rápidas y estructuradas para la tienda, con una búsqueda inteligente que puntúa el catálogo y un moderador de reseñas.
+editor:
+  entrada: index.html
+  archivos: [jev.js, main.js, interfaz.js, tienda.js, productos.js, index.html, estilos.css]
+  ocultos: [config.js]
 ---
 
 ## Objetivo
@@ -17,47 +21,19 @@ Muchas veces no necesitas que un modelo *escriba*: necesitas que **decida**. ¿E
 | `score` | Puntúa en una escala | `score: 1.7` (media ponderada de los niveles) |
 | `noul` | ¿Sí o no? | `noul: 0.93` (probabilidad de «sí») |
 
-Vas a añadir dos funciones a la tienda: **búsqueda inteligente** y **moderación de reseñas**.
+Vas a añadir dos funciones a la tienda: **búsqueda inteligente** y **moderación de reseñas**. Todo el trabajo está en los huecos amarillos de `jev.js`. El token del taller se toma del que hayas guardado en la web (se inyecta en `config.js`).
 
-## Arranca
-
-```bash
-cd retos/03-jev/inicio
-npm install
-npm run dev        # http://localhost:3003
-```
-
-Arriba tienes dos pestañas: **Tu código** (la carpeta `inicio`, la que vas a tocar) y **Ver solución** (`http://localhost:3003/solucion/`), que ejecuta la carpeta `solucion` en el mismo servidor. Mírala antes de empezar para saber cómo debe quedar, o cuando te atasques.
-
-Pega el token del taller (está en la presentación) en `retos/config.js`. Es el mismo archivo para todos los retos:
-
-```js
-export const TOKEN = 'pega-aquí-el-token';
-```
-
-Tienes todos los detalles de la API en [/apis](/apis#jev).
+<!-- editor -->
 
 ## Pasos
 
-Todo el trabajo está en `src/jev.js`.
-
 ### 1. La llamada a Jev
 
-Completa `preguntarAJev(state, questions)`:
+`preguntarAJev(state, questions)` hace un `POST` a la API del taller. Falta lo que lleva la petición: el token (en la cabecera `Authorization`) y el cuerpo.
 
 ```js
-const respuesta = await fetch(`${API_URL}/api/jev`, {
-  method: 'POST',
-  headers: {
-    Authorization: `Bearer ${TOKEN}`,
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({ state, questions }),
-});
-
-const datos = await respuesta.json();
-if (!respuesta.ok) throw new Error(`Jev ha respondido ${respuesta.status}`);
-return datos.answers;
+headers: { Authorization: `Bearer ${___}`, 'Content-Type': 'application/json' },
+body: JSON.stringify(___),
 ```
 
 - `state`: el contenido sobre el que se pregunta (texto u objeto).
@@ -65,53 +41,26 @@ return datos.answers;
 
 ### 2. Búsqueda inteligente
 
-El cliente escribe «un regalo para alguien que teletrabaja, por menos de 60 €». Hazle a Jev **una pregunta `score` por producto, todas en la misma llamada**:
+Las preguntas ya están hechas: **una pregunta `score` por producto, todas en la misma llamada**. `answers[producto.id].score` va de `0` a `2` (la posición en `NIVELES`); pásalo a un encaje entre `0` y `1`. Filtrar y ordenar ya está hecho.
 
 ```js
-questions[producto.id] = {
-  type: 'score',
-  instructions: {
-    tarea: '¿Cuánto encaja este producto con la petición del cliente? Ten en cuenta el uso y el presupuesto.',
-    producto: { nombre, descripcion, categoria, precio_en_euros: precio },
-  },
-  criteria: ['No encaja con lo que pide', 'Encaja solo en parte', 'Encaja muy bien con lo que pide'],
-};
+encaje: ___,
 ```
 
-`answers[producto.id].score` va de `0` a `2`. Normalízalo a `0–1`, filtra y ordena. Fíjate en el tiempo que aparece junto a los resultados: doce decisiones en una sola llamada.
+Pruébalo en el resultado: «un regalo para alguien que teletrabaja, por menos de 60 €». Fíjate en el tiempo que aparece junto a los resultados: doce decisiones en una sola llamada. En la **Consola** verás las respuestas de Jev.
 
 ### 3. Moderar reseñas
 
-Antes de publicar una reseña, tres preguntas en una llamada:
+Antes de publicar una reseña, tres preguntas en una llamada (`noul`, `choice` y `score`). El código decide con números: `inapropiada.noul` es la probabilidad de «sí» (de 0 a 1) y `nota.score` va de 0 a 4.
 
 ```js
-{
-  inapropiada: { type: 'noul', instructions: '¿La reseña contiene insultos, spam, publicidad o datos personales?' },
-  tema: {
-    type: 'choice',
-    instructions: '¿De qué trata la reseña?',
-    criteria: {
-      producto: 'Opina sobre el producto, su calidad o su uso',
-      envio: 'Habla solo del envío o de la entrega',
-      otro: 'No tiene relación con el producto ni con la compra',
-    },
-  },
-  nota: { type: 'score', instructions: '¿Qué valoración le da el cliente al producto?',
-          criteria: ['Muy mala', 'Mala', 'Regular', 'Buena', 'Muy buena'] },
-}
-```
-
-Y el código decide con números:
-
-```js
-if (answers.inapropiada.noul > 0.5) return { publicar: false, motivo: 'contiene contenido inapropiado' };
+const inapropiada = ___;
+const estrellas = ___;
 ```
 
 Pruébalo: abre un producto y escribe una reseña normal, una con publicidad y una que hable de fútbol.
 
-### 4. Extra: la búsqueda inteligente como herramienta WebMCP
-
-Une los bloques 2 y 3: en `src/webmcp.js` registra `busqueda_inteligente` para que un agente del navegador pueda pedir recomendaciones. Usa `interfaz.mostrarRecomendados(lista, peticion)` para que el usuario lo vea.
+> Los pasos se comprueban sin llamar a Jev: cambian `fetch` por uno falso que responde con datos inventados. Así toda la sala puede comprobar a la vez sin gastar el límite de peticiones. La tienda de la pestaña **Resultado** sí llama a Jev de verdad.
 
 ## Qué te llevas
 
@@ -119,5 +68,3 @@ Une los bloques 2 y 3: en `src/webmcp.js` registra `busqueda_inteligente` para q
 - **Probabilidades, no solo respuestas**: tú eliges el umbral (`> 0.5`, `> 0.9`…) según lo que cueste equivocarse.
 - **Varias preguntas por llamada** sobre el mismo contenido.
 - Úsalo para clasificar, enrutar, moderar, ordenar o validar. Para redactar texto sigue haciendo falta un modelo generativo.
-
-¿Te has perdido? Pulsa **Ver solución** (con el token ya pegado) y compara tu código con el de `retos/03-jev/solucion`.

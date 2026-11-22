@@ -10,12 +10,12 @@ Este repositorio contiene:
 | --- | --- |
 | `src/` | La web del taller (Astro): inicio, agenda, enunciados de los retos, documentación de las APIs y la presentación |
 | `src/pages/api/` | Las APIs del taller: un proxy de **Jev** y otro de **OpenAI**, protegidos con un token compartido |
-| `retos/` | Los cuatro retos y uno extra (runonweb), cada uno con `inicio/`, `solucion/` y su enunciado (`README.md`) |
+| `retos/` | Los cuatro retos y uno extra (runonweb). Se hacen en el navegador: `editor/` tiene los archivos del editor de la web y `README.md`, el enunciado |
 | `directo/` | El código de las partes en directo, en pasos comentados que se descomentan. `directo/liga`: un MCP con los resultados de LaLiga y, después, con interfaz; `directo/jev`: la primera decisión con Jev; `directo/runonweb`: una foto pasa por tres modelos en el navegador |
 
 ## Instalación
 
-Es un monorepo: cada reto (`retos/*/inicio`, `retos/*/solucion`) y cada parte del directo (`directo/liga/*`) es un workspace. Un solo `install` en la raíz instala las dependencias de todo el proyecto, con el gestor que prefieras:
+Es un monorepo: la raíz y cada parte del directo (`directo/liga/*`) son workspaces. Un solo `install` en la raíz instala las dependencias de todo el proyecto, con el gestor que prefieras:
 
 ```bash
 npm install    # o
@@ -24,8 +24,6 @@ bun install
 ```
 
 Hay un lockfile para cada uno (`package-lock.json`, `pnpm-lock.yaml` y `bun.lock`). Si cambias dependencias, actualiza los tres.
-
-También puedes instalar desde la carpeta de un reto: `npm install` instala solo ese reto, y `pnpm install` o `bun install`, todo el monorepo.
 
 ## La web
 
@@ -39,8 +37,7 @@ pnpm dev
 | --- | --- |
 | `/` | Presentación del taller y requisitos |
 | `/agenda` | Agenda con los tiempos de cada bloque (se edita en `src/data/agenda.ts`) |
-| `/retos` | Enunciados. Se generan a partir de `retos/*/README.md` |
-| `/apis` | Cómo usar las APIs de Jev y OpenAI |
+| `/retos` | Los retos, con el editor en la página. Se generan a partir de `retos/*/README.md` y `retos/*/editor/` |
 | `/slides` | La presentación |
 | `/directo` | Las demos en directo. Las de IA local (`/directo/traductor`, `/directo/chat`, `/directo/runonweb`) descargan sus modelos la primera vez: ábrelas antes de la charla para que queden en la caché |
 
@@ -60,12 +57,12 @@ Los asistentes usan un único token (`WORKSHOP_TOKEN`). Las claves reales se que
 | `GET /api/jev/v1/models` | `api.typesafe.ai/v1/models` |
 | `POST /api/openai/v1/chat/completions` | OpenAI |
 | `POST /api/openai/v1/responses` | OpenAI |
-| `GET /api/openai/v1/models` | Lista de modelos permitidos |
+| `GET /api/openai/v1/models` | El modelo permitido (`gpt-6-luna`) |
 
 - CORS abierto, para llamarlas desde el navegador.
-- Límite de 300 peticiones cada 10 s por IP, y 256 KB por petición (`wrangler.jsonc` y `src/lib/proxy.ts`). Como toda la sala comparte la Wi-Fi (y por tanto la IP), el límite está pensado para la sala entera. Las respuestas 429 llevan `Retry-After` (el SDK de OpenAI reintenta solo).
-- Los modelos de OpenAI permitidos se configuran en `OPENAI_MODELS` (`wrangler.jsonc`).
-- Son compatibles con los SDK oficiales cambiando la `baseURL` (ver `/apis`).
+- Límite por IP de 10 peticiones cada 10 s y 30 por minuto (Jev, con contadores propios: 15 cada 10 s y 50 por minuto), y 256 KB por petición (`wrangler.jsonc` y `src/lib/proxy.ts`). Las respuestas 429 llevan `Retry-After` (el SDK de OpenAI reintenta solo).
+- El único modelo de OpenAI permitido es `gpt-6-luna`, y cada petición tiene un techo de gasto: razonamiento como mucho `medium`, 8.192 tokens de salida, `service_tier` `default` (o `flex`), `n = 1`, solo herramientas `function`, hasta 4 imágenes, sin archivos ni `previous_response_id`. Todo va fijo en `src/lib/openai-limits.ts`.
+- Son compatibles con los SDK oficiales cambiando la `baseURL`.
 
 ## Despliegue en Cloudflare
 
@@ -77,27 +74,42 @@ pnpm wrangler secret put TYPESAFE_API_KEY
 pnpm build && pnpm wrangler deploy
 ```
 
-El token no está en git. Se lee de `WORKSHOP_TOKEN` en `.dev.vars` al compilar y se muestra en `/apis` y en las slides; los asistentes lo pegan una sola vez en `retos/config.js`, que comparten todos los retos. Tiene que coincidir con el secreto del Worker. Como `pnpm deploy` compila en local, la web desplegada sí lo muestra. Al terminar el taller, cambia el secreto para que deje de funcionar.
+El token no está en git ni se muestra en las slides. Se lee de `WORKSHOP_TOKEN` en `.dev.vars` al compilar para que funcionen el editor de los retos y las demos en directo. Tiene que coincidir con el secreto del Worker. Al terminar el taller, cambia el secreto para que deje de funcionar.
 
 ## Los retos
 
-Una misma tienda online, cuatro piezas:
+Una misma tienda online, cuatro piezas. Los asistentes los hacen **en la web del taller, sin instalar nada**: cada `/retos/<reto>` tiene un editor con todos los archivos del proyecto, el resultado al lado y unos pasos que se comprueban solos al ejecutar. Unos 10 minutos cada uno.
 
-| Reto | Carpeta | Arrancar |
+| Reto | Se edita | El resultado |
 | --- | --- | --- |
-| 1 · MCP UI | `retos/01-mcp-ui` | `npm install && npm run dev` → `http://localhost:3001/mcp` |
-| 2 · WebMCP | `retos/02-webmcp` | `npm install && npm run dev` → `http://localhost:3002` |
-| 3 · Jev | `retos/03-jev` | igual → `http://localhost:3003`; pega el token en `retos/config.js` |
-| 4 · IA local | `retos/04-ia-local` | igual → `http://localhost:3004`. `solucion/` es la aplicación completa |
-| 5 · runonweb (extra) | `retos/05-runonweb` | igual → `http://localhost:3005` |
+| 1 · MCP UI | `server.js` y `vista/app.js` | Un probador: cliente MCP + host de MCP Apps, con tu servidor ejecutándose en el navegador |
+| 2 · WebMCP | `webmcp.js` | La tienda y el panel **Agente**, que lista y ejecuta tus herramientas de `document.modelContext` |
+| 3 · Jev | `jev.js` | La tienda, con búsqueda inteligente y moderación de reseñas (llama a `/api/jev` con el token ya puesto) |
+| 4 · IA local | `ia-local.js` | La tienda, con el resumen de reseñas (Gemini Nano o Transformers.js) |
+| 5 · runonweb (extra) | `runonweb.js` | La tienda, con traducción, búsqueda por significado y dictado |
 
-Los retos 2, 3 y 4 comparten la misma tienda: el `inicio` de cada uno es la `solucion` del anterior. Solo cambian `src/webmcp.js`, `src/jev.js` y `src/ia-local.js`. El reto 5 parte de la `solucion` del 4 y le añade `src/runonweb.js` y sus botones (traducir, buscar por significado, dictar y escuchar); si cambias la tienda de los retos 2–4, cópialo también a `retos/05-runonweb`.
+### Cómo funciona el editor
 
-Cada reto se arranca desde `inicio/` y su demo tiene dos pestañas, **Tu código** y **Ver solución**, para ver la carpeta `solucion/` funcionando sin arrancar otro servidor:
+- **Los archivos** de cada reto están en `retos/<reto>/editor/`, con `comprobaciones.js` (los pasos, sus pistas y cómo se comprueban). Lo que no esté ahí se busca en `retos/tienda/`, la tienda compartida por los retos 2–5 (`interfaz.js`, `tienda.js`, `productos.js`, `index.html`, `estilos.css`, `config.js`).
+- **Los huecos**: un archivo es editable si tiene huecos, y en el editor solo se puede escribir dentro de ellos; el resto está bloqueado. Cada hueco son unas líneas con `___` donde falta algo y su solución, justo debajo del comentario `// TODO n` que lo explica:
 
-- Reto 1: el probador (`http://localhost:3001`) habla con `/mcp` o con `/solucion/mcp`, que es el `crearServidor()` de `solucion/server.js`.
-- Retos 2–5: el plugin de Vite `retos/ver-solucion.js` (en el `vite.config.js` de cada `inicio`) sirve la carpeta `solucion` en `/solucion/` (`http://localhost:300N/solucion/`).
+  ```js
+  // TODO 1: la API de WebMCP vive en el objeto document
+  //[hueco TODO 1]
+  const modelContext = ___;
+  //[solución]
+  const modelContext = document.modelContext;
+  //[/hueco]
+  ```
 
-En el reto 2, el plugin `retos/asistente/plugin.js` añade a las dos pestañas un chat con `gpt-6-luna` que usa las herramientas WebMCP de la página (`getTools()` + `executeTool()`). Va por el proxy de OpenAI del taller con el token de `retos/config.js` (o, si está vacío, el `WORKSHOP_TOKEN` de `.dev.vars`).
+  Al ejecutar, cada `___` vale `undefined` y avisa en la consola de dónde está. **Ver solución** enseña el archivo con los huecos resueltos.
+- **Las pistas** de cada paso (`pistas` en `comprobaciones.js`) salen de una en una, de la más general a la casi solución. Después de la última, **Rellenar con la solución** escribe la respuesta en el hueco.
+- **La lista de archivos**, el HTML de entrada y lo que necesita cada reto van en el frontmatter del `README.md` (`editor:`). El enunciado se parte en `<!-- editor -->`: lo de antes va encima del editor y el resto, debajo.
+- **Se ejecuta en un iframe** sin servidor ni bundler (`src/lib/retos/ejecutar.ts`): cada `.js` es un módulo `blob:` y un import map resuelve los imports relativos y los paquetes de npm. El iframe es del mismo origen que la web, así que las comprobaciones leen su `window`.
+- **Los paquetes de npm** que importa el código de los retos (SDK de MCP, `zod`, Transformers.js, runonweb) se empaquetan en `public/retos/vendor/` con `scripts/vendor-retos.mjs`. Lo lanza solo `astro dev` / `astro build` cuando cambian los lockfiles (no está en git). La lista está en `src/lib/retos/paquetes.js`.
+- **Las comprobaciones** se ejecutan en otro iframe, oculto, para no tocar lo que ve el asistente. No llaman a las APIs ni descargan modelos: usan `fetch` falsos y módulos falsos (`falsos` en `comprobaciones.js`). Así la sala entera puede comprobar a la vez sin gastar el límite de peticiones.
+- **WebMCP** (reto 2): el editor pone su propia `document.modelContext` (`src/lib/retos/runtime/webmcp.js`) para que funcione en cualquier navegador, sin el flag de Chrome.
+- Lo que cada asistente escribe en los huecos se guarda en su `localStorage`. **Reiniciar** lo borra y **Ver solución** → **Copiar a tus huecos** lo sustituye por la solución. Si cambias el texto fijo de un archivo (lo que no está en un hueco), lo guardado de ese archivo deja de valer.
+- **El resultado va en claro** (la tienda, el probador y la vista del reto 1) para distinguirlo del código, que es oscuro.
 
-Cada reto tiene su puerto, `300N` (N es el número del reto), y cada demo del directo el suyo a partir del `3101` (`directo/liga/1-mcp` → 3101, `directo/liga/2-mcp-ui` → 3102). Nunca coinciden, así que puedes tenerlos todos arrancados a la vez. Si añades uno nuevo, sigue el esquema.
+Si cambias un reto, comprueba que al empezar todos los pasos fallan diciendo qué falta y que, con **Rellenar con la solución** en cada uno, todos salen en verde.

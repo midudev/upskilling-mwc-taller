@@ -20,7 +20,7 @@ export const ALL: APIRoute = async ({ request, params }) => {
   if (!route) return error(404, 'Ruta no disponible. Usa POST /api/jev o GET /api/jev/v1/models.');
   if (request.method !== route.method) return error(405, `Esta ruta solo admite ${route.method}.`);
 
-  const blocked = await guard(request);
+  const blocked = await guard(request, 'jev');
   if (blocked) return blocked;
 
   if (!env.TYPESAFE_API_KEY) return error(500, 'El servidor no tiene configurado TYPESAFE_API_KEY.');

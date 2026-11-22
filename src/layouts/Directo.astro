@@ -1,8 +1,8 @@
 ---
 // Layout de las demos en directo que vienen de la charla (Mario, Camp Nou): pantalla completa,
-// sin la cabecera de la web. Deja el token del taller en un <meta> para que llamen a las APIs.
+// sin la cabecera de la web. El token del taller se lee de localStorage y se pide una vez si falta.
 import { Font } from 'astro:assets';
-import { TOKEN_DEL_TALLER } from '../data/taller';
+import TokenGate from '../components/TokenGate.astro';
 
 interface Props {
   title?: string;
@@ -10,9 +10,17 @@ interface Props {
   /** La web del Camp Nou no usa el tema negro */
   light?: boolean;
   icon?: string;
+  /** Si la demo llama a APIs protegidas, pide el token automáticamente si no está guardado */
+  requiereToken?: boolean;
 }
 
-const { title = 'En directo', description = 'Demos en directo del taller', light = false, icon = '/favicon.svg' } = Astro.props;
+const {
+  title = 'En directo',
+  description = 'Demos en directo del taller',
+  light = false,
+  icon = '/favicon.svg',
+  requiereToken = false,
+} = Astro.props;
 ---
 
 <!doctype html>
@@ -24,12 +32,12 @@ const { title = 'En directo', description = 'Demos en directo del taller', light
     <Font cssVariable="--font-pixel" preload />
     <meta name="description" content={description} />
     <meta name="theme-color" content={light ? '#fff' : '#000'} />
-    <meta name="token-taller" content={TOKEN_DEL_TALLER} />
     <link rel="icon" href={icon} />
     <title>{title}</title>
   </head>
   <body>
     <slot />
+    {requiereToken && <TokenGate mode="modal" autoOpen />}
   </body>
 </html>
 

@@ -1,13 +1,18 @@
 ---
 title: MCP UI
 bloque: 1
-minutos: 18
+minutos: 10
 resumen: Un servidor MCP para la tienda que, además de texto, devuelve una interfaz interactiva con el catálogo dentro del chat.
+editor:
+  entrada: probador.html
+  archivos: [server.js, vista/app.js, vista/index.html, vista/estilos.css, tienda.js, productos.js]
+  ocultos: [probador.html, probador.js]
+  generados: [{ ruta: lib/vista.js, tipo: vista-mcp-app, carpeta: vista }]
 ---
 
 ## Objetivo
 
-El servidor MCP de la tienda ya tiene una herramienta `buscar_productos`, pero solo devuelve texto. Vas a convertirla en una **MCP App**: el asistente mostrará una cuadrícula de productos dentro del chat, con un botón para añadir al carrito que llama de vuelta al servidor.
+El servidor MCP de la tienda ya tiene una herramienta `buscar_productos`, pero sin interfaz. Vas a convertirla en una **MCP App**: el asistente mostrará una cuadrícula de productos dentro del chat, con un botón para añadir al carrito que llama de vuelta al servidor.
 
 <figure class="flujo">
 <div class="flujo-scroll">
@@ -30,7 +35,7 @@ El servidor MCP de la tienda ya tiene una herramienta `buscar_productos`, pero s
     <p class="flecha flecha--vuelta"><code>texto + datos</code></p>
   </div>
   <div class="pieza flujo-s1">
-    <p class="pieza-tipo">herramienta · <code>registerAppTool</code> <span class="todo">TODO 1</span></p>
+    <p class="pieza-tipo">herramienta · <code>registerAppTool</code> <span class="todo">TODO 1–2</span></p>
     <p class="pieza-nombre"><code>buscar_productos</code></p>
     <p class="pieza-meta"><code>_meta.ui.resourceUri</code> <code class="uri">ui://tienda/catalogo.html</code></p>
     <dl>
@@ -57,7 +62,7 @@ El servidor MCP de la tienda ya tiene una herramienta `buscar_productos`, pero s
     <p class="flecha flecha--vuelta"><code>HTML</code></p>
   </div>
   <div class="pieza flujo-s2">
-    <p class="pieza-tipo">recurso · <code>registerAppResource</code> <span class="todo">TODO 2</span></p>
+    <p class="pieza-tipo">recurso · <code>registerAppResource</code> <span class="todo">TODO 3</span></p>
     <p class="pieza-nombre uri"><code>ui://tienda/catalogo.html</code></p>
     <p class="pieza-desc">La carpeta <code>vista/</code> empaquetada en un único HTML</p>
   </div>
@@ -67,150 +72,65 @@ El servidor MCP de la tienda ya tiene una herramienta `buscar_productos`, pero s
     <p class="flecha flecha--vuelta"><code>carrito</code></p>
   </div>
   <div class="pieza flujo-s3">
-    <p class="pieza-tipo">herramienta · <code>registerTool</code> <span class="todo">TODO 3</span></p>
+    <p class="pieza-tipo">herramienta · <code>registerTool</code> <span class="muted">ya hecha</span></p>
     <p class="pieza-nombre"><code>anadir_al_carrito</code></p>
     <p class="pieza-desc"><code>{ id, cantidad }</code> → carrito. La puede usar el modelo… y también la vista</p>
   </div>
-  <p class="flujo-nota flujo-c5"><span class="flujo-n flujo-n--extra">5</span> <span><code>app.updateModelContext()</code> avisa al modelo de lo que ha hecho el usuario <span class="todo">TODO 6 · extra</span></span></p>
+  <p class="flujo-nota flujo-c5"><span class="flujo-n flujo-n--extra">5</span> <span><code>app.updateModelContext()</code> avisa al modelo de lo que ha hecho el usuario <span class="muted">(ya hecho)</span></span></p>
 </div>
 </div>
-<figcaption><span class="leyenda leyenda--ida">petición</span> <span class="leyenda leyenda--vuelta">respuesta</span> <span><span class="todo">TODO n</span> dónde lo programas: 1–3 en <code>server.js</code>, 4–6 en <code>vista/app.js</code></span></figcaption>
+<figcaption><span class="leyenda leyenda--ida">petición</span> <span class="leyenda leyenda--vuelta">respuesta</span> <span><span class="todo">TODO n</span> dónde lo completas: 1–3 en <code>server.js</code>, 4–5 en <code>vista/app.js</code></span></figcaption>
 </figure>
 
-## Arranca
+Aquí no hace falta Node: tu `server.js` se ejecuta en el navegador y la pestaña **Resultado** es un cliente MCP, un *probador*. Simula la conversación de arriba (el usuario pide «busca algo de audio» y el modelo llama a `buscar_productos`), pinta la vista si la herramienta tiene una y, debajo, te deja llamar a cada herramienta a mano. Los TODO 1 a 3 están en `server.js`; el 4 y el 5, en `vista/app.js`. Solo se escribe en sus huecos amarillos: lo demás está bloqueado.
 
-```bash
-cd retos/01-mcp-ui/inicio
-npm install
-npm run dev        # servidor en http://localhost:3001/mcp (se reinicia al guardar)
-```
-
-Abre `http://localhost:3001`: es el **probador**, una web con un chat que usa las herramientas de tu servidor y, debajo, un formulario para llamar a cada una a mano. Si la herramienta tiene interfaz, la pinta.
-
-Arriba tienes dos pestañas: **Tu código** (la carpeta `inicio`, la que vas a tocar) y **Ver solución** (`http://localhost:3001/solucion/`), que habla con el servidor de la carpeta `solucion` sin arrancar nada más. Mírala antes de empezar para saber cómo debe quedar, o cuando te atasques.
-
-También puedes comprobarlo desde la terminal, en otra pestaña:
-
-```bash
-npm run probar
-```
-
-Verás las herramientas y un aviso: todavía ninguna tiene interfaz.
-
-## Archivos
-
-| Archivo | Qué es |
-| --- | --- |
-| `server.js` | El servidor MCP. **Aquí están los TODO 1, 2 y 3.** |
-| `vista/app.js` | El JavaScript de la interfaz. **Aquí están los TODO 4, 5 y 6.** |
-| `vista/index.html`, `vista/estilos.css` | HTML y estilos de la interfaz (ya hechos) |
-| `lib/vista.js` | Empaqueta la vista en un único HTML (ya hecho) |
-| `tienda.js`, `productos.js` | Catálogo y carrito: JavaScript normal, sin MCP |
+<!-- editor -->
 
 ## Pasos
 
-### 1. Una herramienta con interfaz
+### 1. La herramienta apunta a su vista
 
-En `server.js`, cambia `server.registerTool` por `registerAppTool` y enlaza la vista con `_meta.ui.resourceUri`. Devuelve los datos para la vista en `structuredContent`:
-
-```js
-registerAppTool(
-  server,
-  'buscar_productos',
-  {
-    title: 'Buscar productos',
-    description: '…',
-    inputSchema: z.object({ /* igual que antes */ }),
-    _meta: { ui: { resourceUri: VISTA_CATALOGO } },
-  },
-  async (filtros) => {
-    const productos = buscarProductos(filtros);
-    return {
-      content: [{ type: 'text', text: '…' }],                  // para el modelo
-      structuredContent: { productos, carrito: verCarrito() },  // para la vista
-    };
-  },
-);
-```
-
-> El `content` de texto sigue siendo importante: es lo que lee el modelo, y lo que ven los clientes que no muestran interfaces.
-
-### 2. El recurso con el HTML
-
-La herramienta apunta a `ui://tienda/catalogo.html`. Registra ese recurso:
+En `server.js`, `buscar_productos` ya se registra con `registerAppTool`, la versión de MCP Apps de `server.registerTool`. Lo que la convierte en una herramienta con interfaz es su `_meta`: la dirección `ui://` de la vista que la muestra.
 
 ```js
-registerAppResource(
-  server,
-  'Catálogo de la tienda',
-  VISTA_CATALOGO,
-  { description: 'Cuadrícula de productos con botón para añadir al carrito' },
-  async () => ({
-    contents: [{ uri: VISTA_CATALOGO, mimeType: RESOURCE_MIME_TYPE, text: await crearVista() }],
-  }),
-);
+_meta: { ui: { resourceUri: ___ } },
 ```
 
-Ejecuta `npm run probar`: ahora `buscar_productos` tiene interfaz.
+### 2. Los datos para la vista
 
-### 3. La herramienta `anadir_al_carrito`
+La herramienta devuelve dos cosas: `content`, el texto que lee el modelo (y lo que ven los clientes que no muestran interfaces), y `structuredContent`, los datos con los que se pinta la vista.
 
-Una herramienta normal (`server.registerTool`) con `id` y `cantidad`. La usará el modelo… y también la vista. Devuelve el carrito en `structuredContent`, y `{ isError: true, … }` si el producto no existe.
+```js
+structuredContent: { productos: ___, carrito: ___ },
+```
+
+### 3. El recurso con el HTML
+
+La herramienta apunta a `ui://tienda/catalogo.html` y el cliente lo pide con `resources/read`. El recurso ya está registrado con `registerAppResource`; falta lo que devuelve: un HTML de MCP Apps (su `mimeType`) y el propio HTML.
+
+```js
+{ uri: VISTA_CATALOGO, mimeType: ___, text: await ___ },
+```
+
+`crearVista()` junta `vista/index.html`, `vista/estilos.css` y `vista/app.js` en un único HTML: el cliente muestra la vista en un iframe aislado, sin acceso a archivos externos. En cuanto ejecutes, el probador pinta la vista… todavía vacía.
 
 ### 4. La vista recibe el resultado
 
-En `vista/app.js`, escucha el resultado de la herramienta y pinta los productos:
+En `vista/app.js`, el cliente le pasa a la vista el resultado de la herramienta con el evento `toolresult`. Saca de él los datos del paso 2:
 
 ```js
-app.addEventListener('toolresult', (resultado) => {
-  const { productos, carrito } = resultado.structuredContent ?? {};
-  if (productos) pintarProductos(productos);
-  if (carrito) pintarCarrito(carrito);
-});
+const { productos, carrito } = ___;
 ```
 
 ### 5. La vista llama al servidor
 
-Completa la función `añadir` con `app.callServerTool()` para que el botón funcione.
+El botón «Añadir» no habla con el servidor directamente: le pide al cliente que llame a otra herramienta.
 
-### 6. Extra: avisa al modelo
-
-Si el usuario añade algo desde la interfaz, el modelo no se entera. Cuéntaselo con `app.updateModelContext()`.
-
-## Pruébalo en un cliente
-
-Necesitas un cliente compatible con MCP Apps. Tres opciones:
-
-**MCPJam Inspector** (lo más rápido, sin cuenta):
-
-```bash
-npm run inspector
+```js
+const resultado = await app.callServerTool({ name: ___, arguments: { id: ___, cantidad: 1 } });
 ```
 
-Añade un servidor HTTP con la URL `http://localhost:3001/mcp`, abre la herramienta `buscar_productos` y ejecútala.
-
-**VS Code**: crea `.vscode/mcp.json` y pregunta en el chat «busca auriculares en la tienda»:
-
-```json
-{
-  "servers": {
-    "tienda": { "type": "http", "url": "http://localhost:3001/mcp" }
-  }
-}
-```
-
-**Claude Desktop** (arranca el servidor como proceso, con `--stdio`): añade a su configuración de servidores MCP:
-
-```json
-{
-  "mcpServers": {
-    "tienda": {
-      "command": "node",
-      "args": ["/RUTA/ABSOLUTA/retos/01-mcp-ui/inicio/server.js", "--stdio"]
-    }
-  }
-}
-```
+Debajo de la vista, el probador apunta lo que le pide: verás la llamada `tools/call anadir_al_carrito`. Después, la vista avisa al modelo con `app.updateModelContext()` (ya está hecho): si el usuario añade algo desde la interfaz, el modelo no se entera de otra forma.
 
 ## Qué te llevas
 
@@ -218,4 +138,4 @@ Añade un servidor HTTP con la URL `http://localhost:3001/mcp`, abre la herramie
 - La interfaz es un recurso `ui://` con HTML que el cliente muestra en un **iframe aislado**.
 - La comunicación es en los dos sentidos: `toolresult` (cliente → vista) y `callServerTool` (vista → servidor).
 
-¿Te has perdido? Pulsa **Ver solución** en el probador para ver cómo debe quedar, y compara tu código con el de `retos/01-mcp-ui/solucion`.
+¿Te atascas? Cada paso tiene **Pista**; después de la última, **Rellenar con la solución** escribe la respuesta en su hueco. Y **Ver solución** enseña todos los huecos resueltos.

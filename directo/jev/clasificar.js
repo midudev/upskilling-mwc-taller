@@ -2,8 +2,8 @@
 // los pasos en orden (selecciona las líneas de código de cada paso y pulsa Cmd + /).
 // La página se recarga sola al guardar y funciona después de cada paso.
 
-// El token del taller (la página lo deja en un <meta>) y el proxy del taller, que añade la clave de TypeSafe
-const TOKEN = document.querySelector('meta[name="token-taller"]')?.content ?? '';
+// El token del taller (guardado en localStorage al introducirlo en la web) y el proxy del taller, que añade la clave de TypeSafe
+const getToken = () => localStorage.getItem('taller:token') ?? '';
 const API_JEV = '/api/jev';
 
 // ─── PASO 1 · Una pregunta: ¿de qué trata el mensaje? ──────────────────────────────
@@ -25,7 +25,7 @@ const API_JEV = '/api/jev';
 // export async function clasificar(mensaje) {
 //   const respuesta = await fetch(API_JEV, {
 //     method: 'POST',
-//     headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
+//     headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
 //     body: JSON.stringify({ state: mensaje, questions: preguntas }),
 //   });
 //

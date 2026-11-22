@@ -6,11 +6,6 @@ import Base from '../../layouts/Base.astro';
 <Base title="Retos">
   <p class="label">Una tienda online, cuatro piezas</p>
   <h1>Retos</h1>
-  <p class="intro muted">
-    Cada reto tiene una carpeta <code>inicio</code> (el punto de partida, con los <code>TODO</code> marcados) y una
-    carpeta <code>solucion</code>. La demo de cada reto tiene una pestaña <strong>Ver solución</strong> que la ejecuta sin
-    arrancar nada más. Si te pierdes, copia la solución y sigue con el siguiente bloque.
-  </p>
 
   <ol>
     {
@@ -25,30 +20,28 @@ import Base from '../../layouts/Base.astro';
               </h2>
               <p class="muted">{reto.resumen}</p>
             </div>
-            <span class="muted time">{reto.minutos} min</span>
+            <span class="muted time">
+              <span class="hecho" data-completado={reto.slug} hidden>✓ hecho · </span>
+              {reto.minutos} min
+            </span>
           </a>
         </li>
       ))
     }
   </ol>
-
-  <pre><code>retos/
-├── 01-mcp-ui/     inicio/  solucion/  README.md
-├── 02-webmcp/     inicio/  solucion/  README.md
-├── 03-jev/        inicio/  solucion/  README.md
-├── 04-ia-local/   inicio/  solucion/  README.md   ← la solución es la app completa
-└── 05-runonweb/   inicio/  solucion/  README.md   ← extra: más IA en local con runonweb</code></pre>
 </Base>
+
+<script>
+  // El editor guarda en localStorage los retos que tienen todos los pasos en verde
+  for (const $hecho of document.querySelectorAll<HTMLElement>('[data-completado]')) {
+    $hecho.hidden = !localStorage.getItem(`reto:${$hecho.dataset.completado}:completado`);
+  }
+</script>
 
 <style>
   h1 {
     font-size: clamp(2.5rem, 7vw, 4rem);
-    margin-block: 0.5rem 1.25rem;
-  }
-
-  .intro {
-    max-width: 62ch;
-    margin-bottom: 3rem;
+    margin-block: 0.5rem 2.5rem;
   }
 
   ol {
@@ -93,5 +86,9 @@ import Base from '../../layouts/Base.astro';
   .time {
     font-size: 0.8rem;
     white-space: nowrap;
+  }
+
+  .hecho {
+    color: #3fdc6f;
   }
 </style>

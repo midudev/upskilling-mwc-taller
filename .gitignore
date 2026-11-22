@@ -32,3 +32,6 @@ pnpm-debug.log*
 
 # ROM de /directo/mario (nunca en git)
 games/
+
+# dependencias de los retos del editor (las genera scripts/vendor-retos.mjs)
+public/retos/vendor/

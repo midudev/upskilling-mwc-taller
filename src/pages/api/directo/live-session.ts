@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro'
+import { MAX_REASONING_EFFORT, OPENAI_MODEL } from '../../../lib/openai-limits'
 import { env, guard } from '../../../lib/proxy'
 
 export const prerender = false
@@ -15,7 +16,7 @@ export const prerender = false
 
 const LIVE_URL = 'https://api.openai.com/v1/live/sessions'
 const LIVE_MODEL = 'gpt-live-1'
-const BACKEND_MODEL = 'gpt-6-luna'
+const BACKEND_MODEL = OPENAI_MODEL
 const VOICE = 'marin'
 
 const MAX_SDP = 64 * 1024
@@ -85,7 +86,7 @@ export const POST: APIRoute = async ({ request }) => {
         tool_choice: 'auto',
         // El formulario es uno: una llamada cada vez.
         parallel_tool_calls: false,
-        reasoning: { effort: 'medium' },
+        reasoning: { effort: MAX_REASONING_EFFORT },
       },
     },
   }

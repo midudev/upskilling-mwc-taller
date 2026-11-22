@@ -26,7 +26,7 @@ export const agenda: AgendaItem[] = [
     minutes: 10,
     kind: 'intro',
     title: 'Bienvenida y puesta a punto',
-    description: 'Qué vamos a construir, clonar el repositorio y comprobar que el token de las APIs funciona.',
+    description: 'Qué vamos a construir y cómo funcionan los retos: se hacen en el navegador, en la web del taller, sin instalar nada.',
   },
   {
     minutes: 40,
@@ -40,7 +40,8 @@ export const agenda: AgendaItem[] = [
       { minutes: 7, text: 'En directo: un servidor MCP con los resultados de LaLiga' },
       { minutes: 4, text: 'Explicación: MCP Apps, la herramienta trae su interfaz' },
       { minutes: 6, text: 'En directo: la clasificación de LaLiga con interfaz' },
-      { minutes: 18, text: 'Reto 1: el catálogo de la tienda dentro del chat' },
+      { minutes: 10, text: 'Reto 1, en el navegador: el catálogo de la tienda dentro del chat' },
+      { minutes: 8, text: 'Repaso: la solución paso a paso y dudas' },
     ],
     reto: '01-mcp-ui',
   },
@@ -54,7 +55,8 @@ export const agenda: AgendaItem[] = [
     steps: [
       { minutes: 10, text: 'Explicación: de leer la pantalla a llamar herramientas' },
       { minutes: 8, text: 'En directo: registrar la primera herramienta' },
-      { minutes: 17, text: 'Reto 2: buscar, añadir al carrito y ver el carrito' },
+      { minutes: 10, text: 'Reto 2, en el navegador: buscar, añadir al carrito y vaciarlo' },
+      { minutes: 7, text: 'Repaso: la solución y un agente de verdad en Chrome' },
     ],
     reto: '02-webmcp',
   },
@@ -74,7 +76,8 @@ export const agenda: AgendaItem[] = [
     steps: [
       { minutes: 8, text: 'Explicación: choice, score y noul' },
       { minutes: 7, text: 'En directo: la primera decisión' },
-      { minutes: 15, text: 'Reto 3: búsqueda inteligente y moderación de reseñas' },
+      { minutes: 10, text: 'Reto 3, en el navegador: búsqueda inteligente y moderación de reseñas' },
+      { minutes: 5, text: 'Repaso: la solución paso a paso y dudas' },
     ],
     reto: '03-jev',
   },
@@ -88,7 +91,8 @@ export const agenda: AgendaItem[] = [
     steps: [
       { minutes: 10, text: 'Explicación: APIs integradas, WebGPU y limitaciones' },
       { minutes: 8, text: 'En directo: resumir en el navegador' },
-      { minutes: 17, text: 'Reto 4: resumen de reseñas en local' },
+      { minutes: 10, text: 'Reto 4, en el navegador: resumen de reseñas en local' },
+      { minutes: 7, text: 'Repaso: Gemini Nano frente a Transformers.js' },
     ],
     reto: '04-ia-local',
   },
