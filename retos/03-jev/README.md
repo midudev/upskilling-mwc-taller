@@ -60,7 +60,7 @@ const estrellas = ___;
 
 Pruébalo: abre un producto y escribe una reseña normal, una con publicidad y una que hable de fútbol.
 
-> Los pasos se comprueban sin llamar a Jev: cambian `fetch` por uno falso que responde con datos inventados. Así toda la sala puede comprobar a la vez sin gastar el límite de peticiones. La tienda de la pestaña **Resultado** sí llama a Jev de verdad.
+> Los pasos se comprueban llamando a Jev de verdad con el token del taller que hayas guardado arriba. Para no gastar peticiones mientras escribes, se comprueban solo cuando pulsas **Ejecutar** (y solo los pasos donde ya hayas rellenado los `___`).
 
 ## Qué te llevas
 

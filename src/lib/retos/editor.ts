@@ -433,13 +433,22 @@ export async function montarEditor($raiz: HTMLElement) {
    */
   async function lanzarComprobaciones(archivosEjecutados: Map<string, string>, { alEscribir = false } = {}) {
     await cargarComprobaciones;
-    if (!comprobaciones) return;
+    if (!comprobaciones || (alEscribir && comprobaciones.soloAlEjecutar)) return;
     const miTurno = ++turno;
     if (!alEscribir) $pasos.forEach((_, indice) => pintarPaso(indice, 'comprobando'));
     $pruebas.replaceChildren();
     await comprobar(
       comprobaciones,
-      { archivos: archivosEjecutados, entrada: config.entrada, preludios: config.preludios, contenedor: $pruebas },
+      {
+        archivos: archivosEjecutados,
+        entrada: config.entrada,
+        preludios: config.preludios,
+        contenedor: $pruebas,
+        omitir: (indice) => {
+          const paso = comprobaciones!.pasos[indice];
+          return quedanBlancos(paso.archivo, paso.todo) ? `Rellena los ___ de su hueco (${paso.todo}, en ${paso.archivo}).` : null;
+        },
+      },
       (indice, estado) => {
         if (miTurno !== turno) return;
         // Si había una comprobación a mano a medias (ruedas girando), esta la sustituye: se pinta todo

@@ -5,7 +5,7 @@ import type { Comprobaciones, Contexto, PeticionFalsa } from './tipos';
 
 export type Estado = { ok: true } | { ok: false; mensaje: string };
 
-const LIMITE = 8000;
+const LIMITE = 12000;
 
 // Los errores que lanza tu código son del iframe (otro «realm»): instanceof Error no los reconoce
 const mensajeDe = (error: any) => String(error?.message ?? error);
@@ -65,10 +65,23 @@ const conLimite = <T>(promesa: Promise<T>, ms: number) =>
 
 export async function comprobar(
   { pasos, falsos }: Comprobaciones,
-  opciones: { archivos: Map<string, string>; entrada: string; preludios: string[]; contenedor: HTMLElement },
+  opciones: {
+    archivos: Map<string, string>;
+    entrada: string;
+    preludios: string[];
+    contenedor: HTMLElement;
+    /** Si devuelve un mensaje para un paso, se marca como fallido sin ejecutar su comprobación */
+    omitir?: (indice: number) => string | null;
+  },
   alComprobar: (indice: number, estado: Estado) => void,
   cancelada: () => boolean,
 ) {
+  const omitidos = pasos.map((_, indice) => opciones.omitir?.(indice) ?? null);
+  if (omitidos.every((mensaje) => mensaje !== null)) {
+    omitidos.forEach((mensaje, indice) => alComprobar(indice, { ok: false, mensaje: mensaje! }));
+    return;
+  }
+
   const ejecucion = ejecutar({ ...opciones, falsos, oculto: true });
   try {
     await conLimite(ejecucion.cargada, 15000);
@@ -77,6 +90,10 @@ export async function comprobar(
 
     for (const [indice, paso] of pasos.entries()) {
       if (cancelada()) return;
+      if (omitidos[indice] !== null) {
+        alComprobar(indice, { ok: false, mensaje: omitidos[indice]! });
+        continue;
+      }
       const contexto = crearContexto(ejecucion.iframe.contentWindow, opciones.archivos);
       try {
         await conLimite(Promise.resolve(paso.comprobar(contexto)), LIMITE);
@@ -87,7 +104,7 @@ export async function comprobar(
     }
   } catch (error) {
     const mensaje = mensajeDe(error);
-    pasos.forEach((_, indice) => alComprobar(indice, { ok: false, mensaje }));
+    pasos.forEach((_, indice) => alComprobar(indice, { ok: false, mensaje: omitidos[indice] ?? mensaje }));
   } finally {
     ejecucion.cerrar();
   }

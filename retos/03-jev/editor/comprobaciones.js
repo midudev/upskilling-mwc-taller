@@ -1,22 +1,47 @@
-// Pasos del reto 3 y cómo se comprueba cada uno. Las comprobaciones no llaman a Jev de verdad:
-// cambian fetch por uno falso que apunta la petición y responde con datos inventados.
-// Así toda la sala puede comprobar a la vez sin gastar el límite de peticiones de la API.
+// Pasos del reto 3 y cómo se comprueba cada uno. Las comprobaciones llaman a Jev de verdad
+// a través de /api/jev con el token del taller, observando las peticiones reales de fetch sin
+// sustituir las respuestas. Solo se lanzan al pulsar Ejecutar (no mientras escribes).
 
-/** Responde como Jev: { answers } con una respuesta por pregunta */
-const comoJev = (responder) => ({ cuerpo }) => ({
-  answers: Object.fromEntries(Object.keys(cuerpo?.questions ?? {}).map((nombre) => [nombre, responder(nombre)])),
-});
+/** Observa las llamadas reales a fetch y guarda petición y respuesta JSON sin falsear nada */
+async function conFetchEspiado(ventana, fn) {
+  const fetchReal = ventana.fetch.bind(ventana);
+  const peticiones = [];
+  ventana.fetch = async (entrada, opciones = {}) => {
+    const cabeceras = {};
+    new Headers(opciones.headers).forEach((valor, nombre) => (cabeceras[nombre] = valor));
+    let cuerpo = opciones.body;
+    try {
+      cuerpo = typeof cuerpo === 'string' ? JSON.parse(cuerpo) : cuerpo;
+    } catch {}
+    const registro = {
+      url: String(entrada),
+      metodo: (opciones.method ?? 'GET').toUpperCase(),
+      cabeceras,
+      cuerpo,
+      estado: 0,
+      respuesta: null,
+    };
+    peticiones.push(registro);
+    const res = await fetchReal(entrada, opciones);
+    registro.estado = res.status;
+    try {
+      registro.respuesta = await res.clone().json();
+    } catch {}
+    return res;
+  };
+  try {
+    return await fn(peticiones);
+  } finally {
+    ventana.fetch = fetchReal;
+  }
+}
 
-const debeFallar = (promesa, mensaje) =>
-  promesa.then(
-    () => {
-      throw new Error(mensaje);
-    },
-    () => {},
-  );
+const exigirToken = (TOKEN, afirmar) =>
+  afirmar(TOKEN, 'Guarda primero el token del taller arriba en la web para comprobar los pasos con Jev.');
 
 /** @type {import('../../../src/lib/retos/tipos').Comprobaciones} */
 export default {
+  soloAlEjecutar: true,
   pasos: [
     {
       titulo: 'La petición a Jev',
@@ -26,30 +51,32 @@ export default {
         'La API del taller necesita saber quién llama: el token va en la cabecera `Authorization`, después de `Bearer `. Ya está importado de config.js como `TOKEN`.',
         'El cuerpo es el objeto `{ state, questions }` convertido en texto con `JSON.stringify`.',
       ],
-      async comprobar({ importar, fetchFalso, afirmar, ventana }) {
+      async comprobar({ importar, afirmar, ventana }) {
         const { preguntarAJev } = await importar('jev.js');
         const { TOKEN } = await importar('config.js');
+        exigirToken(TOKEN, afirmar);
 
-        const peticiones = fetchFalso(() => ({ answers: { spam: { noul: 0.12 } } }));
-        const answers = await preguntarAJev({ texto: 'hola' }, { spam: { type: 'noul', instructions: '¿Es spam?' } });
+        await conFetchEspiado(ventana, async (peticiones) => {
+          const answers = await preguntarAJev({ texto: 'hola' }, { spam: { type: 'noul', instructions: '¿Es spam?' } });
 
-        afirmar(peticiones.length === 1, 'preguntarAJev no ha hecho ninguna petición con fetch.');
-        const [peticion] = peticiones;
-        afirmar(peticion.url.endsWith('/api/jev'), `La URL debería ser \`\${API_URL}/api/jev\` y es ${peticion.url}.`);
-        afirmar(peticion.metodo === 'POST', `Jev se llama con method: 'POST' (ahora es ${peticion.metodo}).`);
-        afirmar(peticion.cabeceras.authorization === `Bearer ${TOKEN}`, `La cabecera Authorization tiene que ser \`Bearer \${TOKEN}\` y es ${JSON.stringify(peticion.cabeceras.authorization)}.`);
-        afirmar(peticion.cabeceras['content-type']?.includes('application/json'), "Falta la cabecera 'Content-Type': 'application/json'.");
-        afirmar(
-          peticion.cuerpo?.state?.texto === 'hola' && peticion.cuerpo?.questions?.spam,
-          'El cuerpo debería ser JSON.stringify({ state, questions }).',
-        );
-        afirmar(answers?.spam?.noul === 0.12, 'Devuelve el campo `answers` del JSON de la respuesta.');
-
-        fetchFalso(() => new ventana.Response(JSON.stringify({ error: { message: 'Token no válido' } }), { status: 401 }));
-        await debeFallar(
-          preguntarAJev({}, {}),
-          'Si Jev responde con un error (un 401, por ejemplo), preguntarAJev debería lanzar un Error: mira respuesta.ok.',
-        );
+          afirmar(peticiones.length === 1, 'preguntarAJev no ha hecho ninguna petición con fetch.');
+          const [peticion] = peticiones;
+          afirmar(peticion.url.endsWith('/api/jev'), `La URL debería ser \`\${API_URL}/api/jev\` y es ${peticion.url}.`);
+          afirmar(peticion.metodo === 'POST', `Jev se llama con method: 'POST' (ahora es ${peticion.metodo}).`);
+          afirmar(
+            peticion.cabeceras.authorization === `Bearer ${TOKEN}`,
+            `La cabecera Authorization tiene que ser \`Bearer \${TOKEN}\` y es ${JSON.stringify(peticion.cabeceras.authorization)}.`,
+          );
+          afirmar(peticion.cabeceras['content-type']?.includes('application/json'), "Falta la cabecera 'Content-Type': 'application/json'.");
+          afirmar(
+            peticion.cuerpo?.state?.texto === 'hola' && peticion.cuerpo?.questions?.spam,
+            'El cuerpo debería ser JSON.stringify({ state, questions }).',
+          );
+          afirmar(
+            typeof answers?.spam?.noul === 'number',
+            'Devuelve el campo `answers` del JSON que responde Jev.',
+          );
+        });
       },
     },
     {
@@ -60,28 +87,39 @@ export default {
         'Jev responde una puntuación por producto: `answers[producto.id].score`. Con 3 niveles, va de 0 a 2.',
         'Para que quede entre 0 y 1, divide entre el nivel más alto: `answers[producto.id].score / 2`.',
       ],
-      async comprobar({ importar, fetchFalso, afirmar }) {
+      async comprobar({ importar, afirmar, ventana }) {
         const { busquedaInteligente } = await importar('jev.js');
-        const puntuaciones = { 'auriculares-anc': 2, 'microfono-usb': 1.4, 'altavoz-bluetooth': 1 };
-        const peticiones = fetchFalso(comoJev((id) => ({ score: puntuaciones[id] ?? 0.4 })));
+        const { TOKEN } = await importar('config.js');
+        exigirToken(TOKEN, afirmar);
 
-        const lista = await busquedaInteligente('algo para grabar un pódcast');
-        afirmar(peticiones.length === 1, 'Todo el catálogo va en una sola llamada a Jev.');
-        afirmar(Array.isArray(lista), 'busquedaInteligente debería devolver una lista [{ producto, encaje }].');
-        afirmar(
-          lista.every((item) => item?.producto?.id && typeof item.encaje === 'number'),
-          'Cada elemento de la lista es { producto, encaje }.',
-        );
-        const primero = lista.find((item) => item.producto.id === 'auriculares-anc');
-        afirmar(primero?.encaje === 1, 'encaje = score / 2: un score de 2 es un encaje de 1.');
-        afirmar(
-          lista.length === 3,
-          `Solo pasan los que llegan a 0.5: deberían quedar 3 y quedan ${lista.length}.`,
-        );
-        afirmar(
-          lista.map((item) => item.producto.id).join() === 'auriculares-anc,microfono-usb,altavoz-bluetooth',
-          'Ordénalos de mayor a menor encaje (sort).',
-        );
+        await conFetchEspiado(ventana, async (peticiones) => {
+          const lista = await busquedaInteligente('algo para grabar un pódcast');
+          afirmar(peticiones.length === 1, 'Todo el catálogo va en una sola llamada a Jev.');
+
+          const realAnswers = peticiones[0].respuesta?.answers;
+          afirmar(realAnswers && typeof realAnswers === 'object', 'Jev no ha devuelto `answers`: revisa el paso 1.');
+          afirmar(Array.isArray(lista), 'busquedaInteligente debería devolver una lista [{ producto, encaje }].');
+          afirmar(
+            lista.every((item) => item?.producto?.id && typeof item.encaje === 'number' && !Number.isNaN(item.encaje)),
+            'Cada elemento de la lista es { producto, encaje } con encaje numérico.',
+          );
+          afirmar(
+            lista.every((item) => item.encaje >= 0 && item.encaje <= 1),
+            'encaje tiene que quedar entre 0 y 1: divide answers[producto.id].score entre 2.',
+          );
+
+          const esperados = Object.entries(realAnswers)
+            .map(([id, resp]) => ({ id, encaje: resp.score / 2 }))
+            .filter(({ encaje }) => encaje >= 0.5)
+            .sort((a, b) => b.encaje - a.encaje);
+
+          afirmar(esperados.length > 0, 'Jev no ha encontrado productos para esta búsqueda; vuelve a intentarlo.');
+          afirmar(
+            lista.length === esperados.length &&
+              lista.every((item, i) => item.producto.id === esperados[i].id && Math.abs(item.encaje - esperados[i].encaje) < 1e-6),
+            'encaje = answers[producto.id].score / 2 (entre 0 y 1). Solo pasan los que llegan a 0.5, ordenados de mayor a menor.',
+          );
+        });
       },
     },
     {
@@ -92,28 +130,44 @@ export default {
         'Tú eliges el umbral: con una probabilidad de «sí» mayor que `0.5`, la reseña es inapropiada.',
         'Para las estrellas, redondea la puntuación y súmale 1: `Math.round(answers.nota.score) + 1`.',
       ],
-      async comprobar({ importar, fetchFalso, afirmar }) {
+      async comprobar({ importar, afirmar, ventana }) {
         const { moderarReseña } = await importar('jev.js');
-        const producto = { id: 'mochila-viaje', nombre: 'Mochila de viaje' };
-        const responder = (respuestas) => fetchFalso(comoJev((nombre) => respuestas[nombre]));
-        const tema = (choice, confidence) => ({ choice, confidence });
+        const { TOKEN } = await importar('config.js');
+        exigirToken(TOKEN, afirmar);
 
-        responder({ inapropiada: { noul: 0.93 }, tema: tema('producto', 0.9), nota: { score: 4 } });
-        const spam = await moderarReseña('GANA DINERO DESDE CASA', producto);
-        afirmar(spam?.publicar === false && spam.motivo, 'Con inapropiada.noul = 0.93 (93 % de que sí) la reseña es inapropiada: `inapropiada` tiene que ser true.');
+        const producto = { id: 'mochila-viaje', nombre: 'Mochila de viaje 28 L' };
 
-        responder({ inapropiada: { noul: 0.04 }, tema: tema('otro', 0.88), nota: { score: 2 } });
-        const futbol = await moderarReseña('¡Qué partidazo el del domingo!', producto);
-        afirmar(futbol?.publicar === false && futbol.motivo, "Si tema.choice es 'otro' con confidence 0.88, no se publica.");
+        const [spam, futbol, buena, notaReal] = await conFetchEspiado(ventana, async (peticiones) => {
+          const resultados = await Promise.all([
+            moderarReseña('GANA 5000 € DESDE CASA, HAZ CLIC AQUÍ http://spam.example', producto),
+            moderarReseña('¡Qué partidazo el del domingo, menudo golazo en el minuto 90!', producto),
+            moderarReseña('Cabe todo para un fin de semana y es muy cómoda', producto),
+          ]);
+          const peticionBuena = peticiones.find((p) => p.cuerpo?.state?.reseña?.includes('Cabe todo'));
+          const scoreReal = peticionBuena?.respuesta?.answers?.nota?.score;
+          return [...resultados, scoreReal];
+        });
 
-        responder({ inapropiada: { noul: 0.4 }, tema: tema('otro', 0.45), nota: { score: 2.2 } });
-        const dudosa = await moderarReseña('Bueno, no sé', producto);
-        afirmar(dudosa?.publicar === true, "Con noul = 0.4 y 'otro' poco seguro (0.45) sí se publica: tú eliges los umbrales.");
-
-        responder({ inapropiada: { noul: 0.02 }, tema: tema('producto', 0.97), nota: { score: 3.4 } });
-        const buena = await moderarReseña('Cabe todo y es muy cómoda', producto);
-        afirmar(buena?.publicar === true, 'Una reseña normal se publica: { publicar: true, nota }.');
-        afirmar(buena.nota === 4, `Con nota.score = 3.4 deberían salir 4 estrellas (redondeado, más 1) y han salido ${buena.nota}.`);
+        afirmar(
+          spam?.publicar === false && spam.motivo === 'contiene contenido inapropiado',
+          'Una reseña con spam es inapropiada (answers.inapropiada.noul > 0.5) y no debería publicarse.',
+        );
+        afirmar(
+          futbol?.publicar === false && futbol.motivo === 'no habla del producto',
+          'Una reseña sobre fútbol no habla del producto y no debería publicarse (comprueba que inapropiada sea answers.inapropiada.noul > 0.5).',
+        );
+        afirmar(buena?.publicar === true, 'Una reseña normal sobre el producto sí se publica: { publicar: true, nota }.');
+        afirmar(
+          Number.isInteger(buena.nota) && buena.nota >= 1 && buena.nota <= 5,
+          `Las estrellas tienen que ser un entero entre 1 y 5 (Math.round(answers.nota.score) + 1) y han salido ${buena.nota}.`,
+        );
+        if (typeof notaReal === 'number') {
+          const estrellasEsperadas = Math.round(notaReal) + 1;
+          afirmar(
+            buena.nota === estrellasEsperadas,
+            `Jev ha respondido nota.score = ${notaReal}: deberían salir ${estrellasEsperadas} estrellas (Math.round(answers.nota.score) + 1) y han salido ${buena.nota}.`,
+          );
+        }
       },
     },
   ],

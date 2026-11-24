@@ -35,6 +35,8 @@ export interface Comprobaciones {
   pasos: Paso[];
   /** Módulos falsos para el iframe de las comprobaciones: especificador → código */
   falsos?: Record<string, string>;
+  /** Si es true, los pasos solo se comprueban al pulsar Ejecutar (no mientras escribes) */
+  soloAlEjecutar?: boolean;
 }
 
 /** Un hueco de un archivo editable: lo único que se puede cambiar. Lo marcan //[hueco TODO n] … //[/hueco] */
