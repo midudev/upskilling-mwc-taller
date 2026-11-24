@@ -21,18 +21,21 @@ export const env = cfEnv as unknown as WorkshopEnv;
 export const MAX_BODY_BYTES = 256 * 1024;
 
 /**
- * Límites por IP, de la ventana corta a la larga. Jev tiene sus propios contadores (y algo más
- * de margen), separados de los de OpenAI. `period` en segundos: debe coincidir con `ratelimits`
- * en wrangler.jsonc (se usa para el Retry-After del 429).
+ * Límites por IP, de la ventana corta a la larga. Solo se limita OpenAI (perfil `default`): Jev
+ * tiene sus propios contadores, separados de los de OpenAI, pero ahora mismo están desactivados.
+ * `period` en segundos: debe coincidir con `ratelimits` en wrangler.jsonc (se usa para el
+ * Retry-After del 429).
  */
 const RATE_LIMITS = {
   default: [
     { binding: 'RATE_LIMITER', period: 10, message: 'Has superado las 10 peticiones en 10 s.' },
     { binding: 'RATE_LIMITER_MINUTE', period: 60, message: 'Has superado las 30 peticiones por minuto.' },
   ],
+  // Jev, sin límite por ahora. Para volver a activarlo, descomenta estas dos líneas (los bindings
+  // siguen definidos en wrangler.jsonc).
   jev: [
-    { binding: 'RATE_LIMITER_JEV', period: 10, message: 'Has superado las 15 peticiones a Jev en 10 s.' },
-    { binding: 'RATE_LIMITER_JEV_MINUTE', period: 60, message: 'Has superado las 50 peticiones a Jev por minuto.' },
+    // { binding: 'RATE_LIMITER_JEV', period: 10, message: 'Has superado las 15 peticiones a Jev en 10 s.' },
+    // { binding: 'RATE_LIMITER_JEV_MINUTE', period: 60, message: 'Has superado las 50 peticiones a Jev por minuto.' },
   ],
 } as const;
 

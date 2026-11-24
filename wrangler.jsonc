@@ -15,7 +15,8 @@
   // Límite por IP a las APIs del taller. Tras el taller, cada IP es una persona: dos ventanas,
   // una de ráfaga (10 peticiones cada 10 s) y otra sostenida (30 por minuto). Cloudflare solo
   // admite `period` de 10 o 60 s. Jev tiene contadores propios con algo más de margen (15 cada 10 s
-  // y 50 por minuto). Si cambias un `limit` o un `period`, actualiza RATE_LIMITS en src/lib/proxy.ts.
+  // y 50 por minuto), ahora sin usar: su límite está desactivado en RATE_LIMITS (src/lib/proxy.ts).
+  // Si cambias un `limit` o un `period`, actualiza RATE_LIMITS en src/lib/proxy.ts.
   "ratelimits": [
     {
       "name": "RATE_LIMITER",
