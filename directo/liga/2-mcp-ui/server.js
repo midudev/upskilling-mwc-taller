@@ -46,7 +46,7 @@ function crearServidor() {
       annotations: { readOnlyHint: true },
       _meta: {
         // ─── PASO 1 · La herramienta enlaza su vista (en las tres herramientas) ───
-        // ui: { resourceUri: VISTA },
+        ui: { resourceUri: VISTA },
       },
     },
     async () => {
@@ -61,7 +61,7 @@ function crearServidor() {
         // Texto para el modelo (y para los clientes que no muestran interfaces)
         content: [{ type: 'text', text: `Clasificación de LaLiga ${clasificacion.temporada}\n${filas.join('\n')}` }],
         // ─── PASO 2 · Además del texto, los datos para la vista (en las tres herramientas) ───
-        // structuredContent: { clasificacion },
+        structuredContent: { clasificacion },
       };
     },
   );
@@ -75,7 +75,7 @@ function crearServidor() {
       annotations: { readOnlyHint: true },
       _meta: {
         // PASO 1
-        // ui: { resourceUri: VISTA },
+        ui: { resourceUri: VISTA },
       },
     },
     async () => {
@@ -85,7 +85,7 @@ function crearServidor() {
       return {
         content: [{ type: 'text', text: `Últimos resultados de LaLiga\n${filas.join('\n')}` }],
         // PASO 2
-        // structuredContent: { resultados },
+        structuredContent: { resultados },
       };
     },
   );
@@ -102,7 +102,7 @@ function crearServidor() {
       annotations: { readOnlyHint: true },
       _meta: {
         // PASO 1
-        // ui: { resourceUri: VISTA },
+        ui: { resourceUri: VISTA },
       },
     },
     async ({ equipo: texto }) => {
@@ -123,7 +123,7 @@ function crearServidor() {
         return {
           content: [{ type: 'text', text: lineas.join('\n') }],
           // PASO 2
-          // structuredContent: { equipo },
+          structuredContent: { equipo },
         };
       } catch (error) {
         return { isError: true, content: [{ type: 'text', text: error.message }] };
@@ -134,22 +134,22 @@ function crearServidor() {
   // ─── PASO 3 · El recurso ui:// con el HTML de la vista ───────────────────────────
   // Las tres herramientas comparten la misma vista. Va en un iframe con una CSP estricta:
   // hay que permitir el CDN de los escudos.
-  // registerAppResource(
-  //   server,
-  //   'LaLiga',
-  //   VISTA,
-  //   { description: 'Clasificación, resultados y fichas de equipo de LaLiga' },
-  //   async () => ({
-  //     contents: [
-  //       {
-  //         uri: VISTA,
-  //         mimeType: RESOURCE_MIME_TYPE,
-  //         text: await crearVista(),
-  //         _meta: { ui: { csp: { resourceDomains: ['https://a.espncdn.com'] } } },
-  //       },
-  //     ],
-  //   }),
-  // );
+  registerAppResource(
+    server,
+    'LaLiga',
+    VISTA,
+    { description: 'Clasificación, resultados y fichas de equipo de LaLiga' },
+    async () => ({
+      contents: [
+        {
+          uri: VISTA,
+          mimeType: RESOURCE_MIME_TYPE,
+          text: await crearVista(),
+          _meta: { ui: { csp: { resourceDomains: ['https://a.espncdn.com'] } } },
+        },
+      ],
+    }),
+  );
 
   return server;
 }
