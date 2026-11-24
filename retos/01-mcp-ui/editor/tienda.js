@@ -38,8 +38,8 @@ export function añadirAlCarrito(id, cantidad = 1) {
 
 export function verCarrito() {
   const lineas = [...carrito].map(([id, cantidad]) => {
-    const { nombre, precio, emoji } = productos.find((producto) => producto.id === id);
-    return { id, nombre, emoji, precio, cantidad, subtotal: precio * cantidad };
+    const { nombre, precio, imagen } = productos.find((producto) => producto.id === id);
+    return { id, nombre, imagen, precio, cantidad, subtotal: precio * cantidad };
   });
 
   return {

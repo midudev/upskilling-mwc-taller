@@ -9,6 +9,7 @@ import { Compartment, EditorState } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import { basicSetup } from 'codemirror';
 import { montarAgente } from './agente';
+import { montarChat } from './chat';
 import { comprobar, type Estado } from './comprobar';
 import { ejecutar, traducir, type Ejecucion } from './ejecutar';
 import { componer, contenidoDeHuecos, huecos, huecosDe, marcarHechos } from './huecos';
@@ -129,6 +130,7 @@ export async function montarEditor($raiz: HTMLElement) {
     const escapar = (codigo: string) => codigo.replaceAll('</script', '<\\/script');
     const importMap = { imports: { '@modelcontextprotocol/ext-apps': new URL(`${CARPETA_VENDOR}/ext-apps.js`, location.origin).href } };
     const documento = (archivos.get(`${carpeta}/index.html`) ?? '')
+      .replace('<head>', () => `<head>\n    <base href="${location.origin}/">`)
       .replace('<!-- ESTILOS -->', () => `<style>${archivos.get(`${carpeta}/estilos.css`) ?? ''}</style>`)
       .replace(
         '<!-- SCRIPT -->',
@@ -365,17 +367,20 @@ export async function montarEditor($raiz: HTMLElement) {
     ejecutarTodo();
   }
 
-  // ── Agente (reto de WebMCP) ─────────────────────────────────────────────
+  // ── Agente y chatbot (reto de WebMCP) ──────────────────────────────────
 
   const $agente = $raiz.querySelector<HTMLElement>('[data-agente]');
   const agente = $agente && config.paneles.includes('agente') ? montarAgente($agente) : null;
+  const chat = config.paneles.includes('agente') ? montarChat($raiz) : null;
 
   window.addEventListener('message', ({ data, source }) => {
     if (!ejecucion || data?.__reto !== ejecucion.id || source !== ejecucion.iframe.contentWindow) return;
     if (data.tipo === 'consola') anotar(data.nivel, data.texto);
     else if (data.tipo === 'error') anotar('error', data.texto);
-    else if (data.tipo === 'herramientas') agente?.actualizar();
-    else if (data.tipo === 'cargada') localStorage.removeItem(CLAVE_EJECUTANDO);
+    else if (data.tipo === 'herramientas') {
+      agente?.actualizar();
+      chat?.actualizar();
+    } else if (data.tipo === 'cargada') localStorage.removeItem(CLAVE_EJECUTANDO);
   });
 
   // ── Pasos: se comprueban en un iframe oculto cada vez que ejecutas ───────
@@ -517,9 +522,11 @@ export async function montarEditor($raiz: HTMLElement) {
     localStorage.setItem(CLAVE_EJECUTANDO, '1');
     ejecucion = ejecutar({ archivos: enEjecucion, entrada: config.entrada, preludios: config.preludios, contenedor: $vista });
     agente?.conectar(ejecucion.iframe.contentWindow);
+    chat?.conectar(ejecucion.iframe.contentWindow);
     ejecucion.cargada.then(() => {
       localStorage.removeItem(CLAVE_EJECUTANDO);
       agente?.actualizar();
+      chat?.actualizar();
     });
 
     if (modo === 'tuyo') lanzarComprobaciones(enEjecucion);
@@ -695,7 +702,12 @@ export async function montarEditor($raiz: HTMLElement) {
   };
   $ampliar.addEventListener('click', () => ampliar(!$raiz.classList.contains('ampliado')));
   document.addEventListener('keydown', (evento) => {
-    if (evento.key === 'Escape' && $raiz.classList.contains('ampliado')) ampliar(false);
+    if (evento.key !== 'Escape') return;
+    if (chat?.estaAbierto()) {
+      chat.cerrar();
+      return;
+    }
+    if ($raiz.classList.contains('ampliado')) ampliar(false);
   });
 
   // ⌘S / Ctrl+S ejecuta también con el foco fuera del código (dentro, ya lo hace el editor)

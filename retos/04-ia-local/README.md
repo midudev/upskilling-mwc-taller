@@ -31,25 +31,37 @@ Todo el trabajo está en los huecos amarillos de `ia-local.js`. Mientras no los 
 
 ### 1. ¿Está disponible?
 
-Si existe el objeto `Summarizer`, pregúntale si puede resumir en español. `espera` ya está hecha: una promesa que devuelve `'unavailable'` a los 3 segundos, porque hay navegadores que tardan mucho en contestar.
+La API integrada vive en el objeto global `Summarizer` (en `self`). Comprueba si existe antes de preguntarle con `Summarizer.availability()` si puede resumir en español: si no está, devuelve `'unavailable'`.
 
 ```js
-return Promise.race([___, espera]).catch(() => 'unavailable');
+if (!(___)) return 'unavailable';
 ```
 
-> Gemini Nano necesita Chrome de escritorio, 22 GB libres en disco y una GPU con más de 4 GB de VRAM (o 16 GB de RAM y 4 núcleos). Si tu navegador no lo tiene, no pasa nada: el plan B (pasos 3 y 4) funciona en cualquier navegador moderno.
+> Gemini Nano necesita Chrome de escritorio, 22 GB libres en disco y una GPU con más de 4 GB de VRAM (o 16 GB de RAM y 4 núcleos). Si tu navegador no lo tiene, no pasa nada: el plan B (pasos 4 y 5) funciona en cualquier navegador moderno.
 
-### 2. Resume con Gemini Nano, en streaming
+### 2. Crea y configura el resumidor
 
-El resumidor ya se crea con `Summarizer.create({ … })`: tipo de resumen, idioma y un `monitor` para el progreso de la descarga. Falta pedirle el resumen a trozos, según se escribe:
+Crea el resumidor con `Summarizer.create({ … })`, elige el tipo de resumen (`'tldr'`, `'key-points'`, `'teaser'` o `'headline'`) y el idioma de salida en español (`'es'`):
+
+```js
+const summarizer = await ___({
+  type: ___, // 'key-points' | 'tldr' | 'teaser' | 'headline'
+  // …
+  outputLanguage: ___,
+});
+```
+
+La primera vez, Chrome descarga el modelo (una sola vez para todas las webs). Por eso `create()` necesita que el usuario haya hecho clic.
+
+### 3. Resume con Gemini Nano, en streaming
+
+Con el resumidor ya creado, pídele el resumen a trozos, según se escribe:
 
 ```js
 const stream = ___;
 ```
 
-La primera vez, Chrome descarga el modelo (una sola vez para todas las webs). Por eso `create()` necesita que el usuario haya hecho clic.
-
-### 3. Plan B: carga el modelo con Transformers.js
+### 4. Plan B: carga el modelo con Transformers.js
 
 El mismo patrón (cargar el modelo → generar en streaming) con una librería en vez de una API del navegador. `pipeline` recibe la tarea, el modelo y las opciones:
 
@@ -59,7 +71,7 @@ generador ??= await ___;
 
 `device` es `'webgpu'` si hay GPU y `'wasm'` si no; `dtype` es la cuantización (unos 470 MB en vez de 3 GB, a cambio de algo de calidad). El `??=` hace que el modelo se cargue una sola vez.
 
-### 4. Plan B: el resumen, según se escribe
+### 5. Plan B: el resumen, según se escribe
 
 El modelo escribe a trozos: cada vez que llega uno, súmalo a lo que llevas y enséñalo.
 

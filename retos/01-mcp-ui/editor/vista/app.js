@@ -20,17 +20,21 @@ function pintarProductos(productos) {
       const $item = document.createElement('li');
       $item.className = 'producto';
       $item.innerHTML = `
-        <span class="emoji" aria-hidden="true"></span>
-        <span class="nombre"></span>
+        <div class="foto">
+          <img alt="" width="560" height="560" />
+          <span class="valoracion"></span>
+        </div>
+        <div class="titulo">
+          <h3 class="nombre"></h3>
+          <strong class="precio"></strong>
+        </div>
         <p class="descripcion"></p>
-        <div class="pie">
-          <span class="precio"></span>
-          <button class="añadir" type="button">Añadir</button>
-        </div>`;
-      $item.querySelector('.emoji').textContent = producto.emoji;
+        <button class="añadir" type="button">Añadir al carrito</button>`;
+      $item.querySelector('img').src = producto.imagen;
+      $item.querySelector('.valoracion').textContent = `★ ${producto.valoracion}`;
       $item.querySelector('.nombre').textContent = producto.nombre;
+      $item.querySelector('.precio').textContent = euros(producto.precio);
       $item.querySelector('.descripcion').textContent = producto.descripcion;
-      $item.querySelector('.precio').textContent = `${euros(producto.precio)} · ★ ${producto.valoracion}`;
       $item.querySelector('button').addEventListener('click', (evento) => añadir(producto, evento.currentTarget));
       return $item;
     }),

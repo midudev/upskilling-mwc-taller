@@ -38,7 +38,12 @@ export async function busquedaInteligente(peticion) {
   const questions = {};
   for (const producto of productos) {
     questions[producto.id] = {
+      // TODO 2: cada producto se puntúa en una escala ('score') usando los NIVELES como criteria
+      //[hueco TODO 2]
+      type: ___,
+      //[solución]
       type: 'score',
+      //[/hueco]
       instructions: {
         tarea: '¿Cuánto encaja este producto con la petición del cliente? Ten en cuenta el uso y el presupuesto.',
         producto: {
@@ -48,7 +53,11 @@ export async function busquedaInteligente(peticion) {
           precio_en_euros: producto.precio,
         },
       },
+      //[hueco TODO 2]
+      criteria: ___,
+      //[solución]
       criteria: NIVELES,
+      //[/hueco]
     };
   }
 
@@ -58,12 +67,7 @@ export async function busquedaInteligente(peticion) {
   return productos
     .map((producto) => ({
       producto,
-      // TODO 2: answers[producto.id].score va de 0 a 2 (la posición en NIVELES). Pásalo a un encaje entre 0 y 1
-      //[hueco TODO 2]
-      encaje: ___,
-      //[solución]
       encaje: answers[producto.id].score / 2,
-      //[/hueco]
     }))
     .filter(({ encaje }) => encaje >= 0.5)
     .sort((a, b) => b.encaje - a.encaje);
@@ -77,12 +81,21 @@ export async function moderarReseña(texto, producto) {
   const answers = await preguntarAJev(
     { producto: producto.nombre, reseña: texto },
     {
+      // TODO 3: inapropiada es una pregunta de sí/no ('noul') y tema elige entre opciones ('choice')
       inapropiada: {
+        //[hueco TODO 3]
+        type: ___,
+        //[solución]
         type: 'noul',
+        //[/hueco]
         instructions: '¿La reseña contiene insultos, spam, publicidad o datos personales?',
       },
       tema: {
+        //[hueco TODO 3]
+        type: ___,
+        //[solución]
         type: 'choice',
+        //[/hueco]
         instructions: '¿De qué trata la reseña?',
         criteria: {
           producto: 'Opina sobre el producto, su calidad o su uso',
@@ -99,9 +112,9 @@ export async function moderarReseña(texto, producto) {
   );
   console.log('Respuestas de Jev:', answers);
 
-  // TODO 3: el código decide con números. answers.inapropiada.noul es la probabilidad de «sí» (de 0 a 1)
+  // TODO 4: el código decide con números. answers.inapropiada.noul es la probabilidad de «sí» (de 0 a 1)
   // y answers.nota.score va de 0 (Muy mala) a 4 (Muy buena): pásalo a estrellas, de 1 a 5
-  //[hueco TODO 3]
+  //[hueco TODO 4]
   const inapropiada = ___;
   const estrellas = ___;
   //[solución]

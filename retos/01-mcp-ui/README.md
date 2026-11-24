@@ -82,7 +82,7 @@ El servidor MCP de la tienda ya tiene una herramienta `buscar_productos`, pero s
 <figcaption><span class="leyenda leyenda--ida">petición</span> <span class="leyenda leyenda--vuelta">respuesta</span> <span><span class="todo">TODO n</span> dónde lo completas: 1–3 en <code>server.js</code>, 4–5 en <code>vista/app.js</code></span></figcaption>
 </figure>
 
-Aquí no hace falta Node: tu `server.js` se ejecuta en el navegador y la pestaña **Resultado** es un cliente MCP, un *probador*. Simula la conversación de arriba (el usuario pide «busca algo de audio» y el modelo llama a `buscar_productos`), pinta la vista si la herramienta tiene una y, debajo, te deja llamar a cada herramienta a mano. Los TODO 1 a 3 están en `server.js`; el 4 y el 5, en `vista/app.js`. Solo se escribe en sus huecos amarillos: lo demás está bloqueado.
+Aquí no hace falta Node: tu `server.js` se ejecuta en el navegador y la pestaña **Resultado** es un cliente MCP, un *probador*. Empieza con una consulta de ejemplo («busca algo de audio») y te deja **chatear libremente** para probar tus herramientas (usa el modelo del taller si tienes token, o un modo local si no). Arriba muestra cuántas herramientas se han detectado correctas y, debajo, los checks de cada una y formularios para probarlas a mano. Los TODO 1 a 3 están en `server.js`; el 4 y el 5, en `vista/app.js`. Solo se escribe en sus huecos amarillos: lo demás está bloqueado.
 
 <!-- editor -->
 

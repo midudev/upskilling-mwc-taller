@@ -67,27 +67,68 @@ export default {
       archivo: 'ia-local.js',
       todo: 'TODO 1',
       pistas: [
-        "`Summarizer.availability(opciones)` responde 'unavailable', 'downloadable', 'downloading' o 'available'. Pasa las opciones con las que vas a resumir.",
-        "En español: `Summarizer.availability({ outputLanguage: 'es' })`.",
+        'Comprueba si la propiedad `Summarizer` existe en el objeto global `self` usando el operador `in`.',
+        "Si no existe: `'Summarizer' in self` (el `!` de fuera ya lo niega para devolver `'unavailable'`).",
       ],
       async comprobar({ importar, ventana, afirmar }) {
         const { disponibilidad } = await importar('ia-local.js');
 
         delete ventana.Summarizer;
-        const sin = await disponibilidad();
+        let sin;
+        try {
+          sin = await disponibilidad();
+        } catch (error) {
+          afirmar(false, `Sin Summarizer ha fallado (${error.message}). Comprueba si existe con 'Summarizer' in self.`);
+        }
         afirmar(sin === 'unavailable', `Sin Summarizer debería devolver 'unavailable' y devuelve ${JSON.stringify(sin)}.`);
 
         const registro = summarizerFalso(ventana, { disponible: 'downloadable' });
         const con = await disponibilidad();
-        afirmar(registro.availability.length === 1, 'Pregúntale a la API con Summarizer.availability({ … }).');
-        afirmar(con === 'downloadable', `Devuelve lo que diga Summarizer.availability() (aquí, 'downloadable') y devuelve ${JSON.stringify(con)}.`);
-        afirmar(registro.availability[0]?.outputLanguage === 'es', "Pide la disponibilidad para resumir en español: { outputLanguage: 'es' }.");
+        afirmar(registro.availability.length === 1, 'Cuando Summarizer existe en self, debería continuar y llamar a Summarizer.availability().');
+        afirmar(con === 'downloadable', `Cuando Summarizer existe, debería devolver 'downloadable' y devuelve ${JSON.stringify(con)}.`);
+      },
+    },
+    {
+      titulo: 'Crear y configurar el resumidor',
+      archivo: 'ia-local.js',
+      todo: 'TODO 2',
+      pistas: [
+        'El resumidor se crea llamando a `Summarizer.create({ … })`.',
+        "Elige uno de los tipos del comentario (por ejemplo `'tldr'`) y el idioma de salida en español: `'es'`.",
+      ],
+      async comprobar({ importar, ventana, afirmar }) {
+        const { resumirConChrome } = await importar('ia-local.js');
+        const registro = summarizerFalso(ventana);
+        const progreso = [];
+
+        try {
+          await resumirConChrome(PRODUCTO, {
+            alProgresar: (porcentaje) => progreso.push(porcentaje),
+            alEscribir: () => {},
+          });
+        } catch (error) {
+          if (!registro.create) {
+            afirmar(false, `Crea el resumidor con Summarizer.create({ … }) (${error.message}).`);
+          }
+        }
+
+        afirmar(registro.create, 'Crea el resumidor con Summarizer.create({ … }).');
+        const tiposValidos = ['key-points', 'tldr', 'teaser', 'headline'];
+        afirmar(
+          tiposValidos.includes(registro.create.type),
+          `Elige un tipo de resumen válido ('tldr', 'key-points', 'teaser' o 'headline') y has puesto ${JSON.stringify(registro.create.type)}.`,
+        );
+        afirmar(
+          registro.create.outputLanguage === 'es',
+          `El resumen tiene que salir en español: outputLanguage: 'es' (ahora es ${JSON.stringify(registro.create.outputLanguage)}).`,
+        );
+        afirmar(progreso.includes(50), 'El monitor de descarga debería seguir avisando con alProgresar.');
       },
     },
     {
       titulo: 'Resumir con Gemini Nano, en streaming',
       archivo: 'ia-local.js',
-      todo: 'TODO 2',
+      todo: 'TODO 3',
       pistas: [
         'El resumidor ya está creado (`summarizer`). Su método `summarizeStreaming(texto)` devuelve el resumen a trozos, según se escribe.',
         'El texto es el de las reseñas: `summarizer.summarizeStreaming(textoDeReseñas(producto))`.',
@@ -117,7 +158,7 @@ export default {
     {
       titulo: 'Plan B: cargar el modelo con Transformers.js',
       archivo: 'ia-local.js',
-      todo: 'TODO 3',
+      todo: 'TODO 4',
       pistas: [
         '`pipeline` recibe la tarea, el modelo (la constante `MODELO`) y las opciones: dónde se ejecuta (`device`), la precisión (`dtype`) y el aviso de progreso.',
         "`pipeline('text-generation', MODELO, { device, dtype, progress_callback })`: las tres variables ya están definidas justo encima.",
@@ -143,7 +184,7 @@ export default {
     {
       titulo: 'Plan B: el resumen, según se escribe',
       archivo: 'ia-local.js',
-      todo: 'TODO 4',
+      todo: 'TODO 5',
       pistas: [
         'Cada vez que el modelo escribe algo, llega en `trozo`. `texto` guarda todo lo escrito hasta ahora.',
         '`texto += trozo` y después `alEscribir?.(texto)`, con todo el texto, no solo el trozo.',

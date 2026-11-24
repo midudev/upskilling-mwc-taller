@@ -14,6 +14,13 @@
         --suave: #6b6b6b;
         --acento: #e0281d;
         --ok: #15803d;
+        --ok-fondo: #edf9f0;
+        --ok-borde: #15803d44;
+        --aviso: #b45309;
+        --aviso-fondo: #fef9e7;
+        --aviso-borde: #d9770644;
+        --error-fondo: #fdecea;
+        --error-borde: #e0281d44;
         font-family: ui-monospace, 'Geist Mono', SFMono-Regular, Menlo, monospace;
         font-size: 13px;
         line-height: 1.55;
@@ -23,7 +30,7 @@
       }
       body {
         margin: 0;
-        padding: 1rem 1.1rem 2rem;
+        padding: 0 1.1rem 2.25rem;
         background: var(--fondo);
         color: var(--texto);
       }
@@ -33,7 +40,8 @@
         margin: 0;
       }
       h1 {
-        font-size: 1rem;
+        font-size: 0.96rem;
+        line-height: 1.3;
       }
       h1 small,
       .suave {
@@ -41,9 +49,8 @@
         font-weight: 400;
       }
       h2 {
-        margin: 1.5rem 0 0.6rem;
-        font-size: 0.75rem;
-        font-weight: 400;
+        font-size: 0.72rem;
+        font-weight: 600;
         letter-spacing: 0.08em;
         text-transform: uppercase;
         color: var(--suave);
@@ -55,22 +62,33 @@
         color: inherit;
       }
       button {
-        padding: 0.3rem 0.7rem;
+        padding: 0.3rem 0.65rem;
         border: 1px solid var(--linea);
-        border-radius: 4px;
-        background: transparent;
+        border-radius: 5px;
+        background: var(--fondo);
         cursor: pointer;
+        white-space: nowrap;
       }
-      button:hover {
+      button:hover:not(:disabled) {
         border-color: var(--texto);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: progress;
       }
       input,
       select {
         width: 9rem;
         padding: 0.3rem 0.45rem;
         border: 1px solid var(--linea);
-        border-radius: 4px;
+        border-radius: 5px;
         background: var(--superficie);
+      }
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--texto);
+        background: var(--fondo);
       }
       pre {
         margin: 0.5rem 0 0;
@@ -78,10 +96,11 @@
         max-height: 12rem;
         overflow: auto;
         border: 1px solid var(--linea);
-        border-radius: 4px;
+        border-radius: 5px;
         background: var(--superficie);
         font-size: 0.75rem;
         white-space: pre-wrap;
+        overflow-wrap: anywhere;
       }
       details {
         margin-top: 0.4rem;
@@ -89,37 +108,172 @@
       summary {
         cursor: pointer;
         color: var(--suave);
-        font-size: 0.78rem;
+        font-size: 0.76rem;
       }
+      [hidden] {
+        display: none !important;
+      }
+
+      /* ── Cabecera fija con resumen de herramientas ── */
       .cabecera {
+        position: sticky;
+        top: 0;
+        z-index: 10;
         display: flex;
+        flex-wrap: wrap;
+        align-items: center;
         justify-content: space-between;
-        gap: 1rem;
-        padding-bottom: 0.75rem;
+        gap: 0.5rem 0.75rem;
+        margin: 0 -1.1rem 1rem;
+        padding: 0.75rem 1.1rem;
         border-bottom: 1px solid var(--linea);
+        background: rgba(255, 255, 255, 0.94);
+        backdrop-filter: blur(6px);
+      }
+      .cabecera-izq {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+      }
+      #servidor {
+        font-size: 0.74rem;
+      }
+      .resumen-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.28rem 0.65rem;
+        border: 1px solid var(--linea);
+        border-radius: 999px;
+        background: var(--superficie);
+        color: var(--suave);
+        font-size: 0.74rem;
+        font-weight: 600;
+      }
+      .resumen-badge[data-estado='ok'] {
+        background: var(--ok-fondo);
+        border-color: var(--ok-borde);
+        color: var(--ok);
+      }
+      .resumen-badge[data-estado='parcial'] {
+        background: var(--aviso-fondo);
+        border-color: var(--aviso-borde);
+        color: var(--aviso);
+      }
+      .resumen-badge[data-estado='error'] {
+        background: var(--error-fondo);
+        border-color: var(--error-borde);
+        color: var(--acento);
+      }
+
+      /* ── Sección de chat interactivo ── */
+      .chat-seccion {
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--linea);
+        border-radius: 10px;
+        background: var(--fondo);
+        overflow: hidden;
+      }
+      .chat-barra {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.4rem 0.75rem;
+        padding: 0.55rem 0.85rem;
+        border-bottom: 1px solid var(--linea);
+        background: var(--superficie);
+      }
+      .chat-controles {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .modo-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.12rem 0.48rem;
+        border: 1px solid var(--linea);
+        border-radius: 999px;
+        background: var(--fondo);
+        font-size: 0.7rem;
+        color: var(--suave);
+      }
+      .modo-badge[data-modo='ia'] {
+        border-color: var(--ok-borde);
+        background: var(--ok-fondo);
+        color: var(--ok);
+      }
+      .btn-sutil {
+        padding: 0.16rem 0.5rem;
+        font-size: 0.72rem;
+        color: var(--suave);
+      }
+      .btn-sutil:hover:not(:disabled) {
+        color: var(--texto);
       }
       .chat {
-        display: grid;
-        gap: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        padding: 0.85rem;
+        max-height: 560px;
+        overflow-y: auto;
+        scroll-behavior: smooth;
       }
       .burbuja {
-        max-width: 85%;
-        padding: 0.5rem 0.75rem;
+        max-width: 92%;
+        padding: 0.55rem 0.8rem;
         border: 1px solid var(--linea);
         border-radius: 8px;
       }
       .usuario {
-        justify-self: end;
+        align-self: flex-end;
+        max-width: 82%;
         background: var(--superficie);
+        border-radius: 10px 10px 2px 10px;
+      }
+      .asistente {
+        align-self: flex-start;
+        background: var(--fondo);
+        border-radius: 10px 10px 10px 2px;
+      }
+      .asistente .texto-modelo > * + * {
+        margin-top: 0.45rem;
+      }
+      .asistente ul {
+        margin: 0.35rem 0 0;
+        padding-left: 1.2rem;
+      }
+      .asistente code {
+        padding: 0.05rem 0.3rem;
+        border-radius: 4px;
+        background: var(--superficie);
+        font-size: 0.9em;
+      }
+      .llamada {
+        align-self: stretch;
+        max-width: 100%;
       }
       .llamada > code {
+        display: inline-block;
+        margin-top: 0.15rem;
         color: var(--acento);
+        word-break: break-word;
+      }
+      .quien {
+        font-size: 0.72rem;
+        color: var(--suave);
       }
       .meta {
         display: flex;
         flex-wrap: wrap;
         gap: 0.75rem;
-        font-size: 0.75rem;
+        margin-top: 0.25rem;
+        font-size: 0.74rem;
       }
       .ok {
         color: var(--ok);
@@ -131,10 +285,68 @@
         margin-top: 0.5rem;
         padding: 0.5rem 0.75rem;
         border-left: 2px solid var(--acento);
-        background: #fdecea;
+        background: var(--error-fondo);
         color: #9f1c13;
         font-size: 0.78rem;
       }
+      .aviso-acciones {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.4rem;
+      }
+      #pensando {
+        padding: 0 0.85rem 0.6rem;
+        font-size: 0.76rem;
+        color: var(--suave);
+      }
+      .chat-pie {
+        border-top: 1px solid var(--linea);
+        background: var(--superficie);
+        padding: 0.6rem 0.85rem 0.75rem;
+        display: grid;
+        gap: 0.5rem;
+      }
+      .sugerencias {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+      .sugerencias button {
+        padding: 0.18rem 0.52rem;
+        border-radius: 999px;
+        font-size: 0.71rem;
+        color: var(--suave);
+        background: var(--fondo);
+      }
+      .sugerencias button:hover:not(:disabled) {
+        color: var(--texto);
+        border-color: var(--texto);
+      }
+      .compositor {
+        display: flex;
+        gap: 0.45rem;
+      }
+      .compositor input {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+        padding: 0.45rem 0.65rem;
+        background: var(--fondo);
+      }
+      .compositor button {
+        padding: 0.45rem 0.85rem;
+        border-color: var(--texto);
+        background: var(--texto);
+        color: #fff;
+        font-weight: 600;
+      }
+      .compositor button:hover:not(:disabled) {
+        border-color: var(--acento);
+        background: var(--acento);
+      }
+
       /* La vista de MCP Apps: en un cliente de verdad, un iframe aislado */
       .marco {
         margin-top: 0.5rem;
@@ -169,48 +381,200 @@
         color: var(--ok);
         margin-right: 0.5rem;
       }
+
+      /* ── Herramientas del servidor con checks ── */
+      .seccion-herramientas {
+        margin-top: 1.4rem;
+      }
+      .herramientas-cabecera {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-bottom: 0.6rem;
+      }
+      .herramientas-contador {
+        font-size: 0.74rem;
+        color: var(--suave);
+      }
+      .herramientas-contador[data-estado='ok'] {
+        color: var(--ok);
+        font-weight: 600;
+      }
       .herramientas {
         margin: 0;
         padding: 0;
         list-style: none;
+        display: grid;
+        gap: 0.75rem;
       }
-      .herramientas > li {
-        padding-block: 0.75rem;
-        border-top: 1px solid var(--linea);
+      .herramienta-card {
+        padding: 0.75rem 0.85rem;
+        border: 1px solid var(--linea);
+        border-radius: 8px;
+        background: var(--fondo);
       }
-      .herramientas form {
+      .herramienta-card[data-estado='ok'] {
+        border-color: var(--ok-borde);
+      }
+      .herramienta-titulo {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.45rem;
+      }
+      .herramienta-titulo code {
+        font-weight: 700;
+      }
+      .check-icono {
+        display: inline-grid;
+        place-items: center;
+        width: 1.15rem;
+        height: 1.15rem;
+        border-radius: 50%;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1;
+        flex: none;
+      }
+      .check-icono.ok {
+        background: var(--ok);
+        color: #fff;
+      }
+      .check-icono.pendiente {
+        border: 1.5px solid var(--aviso);
+        color: var(--aviso);
+        background: var(--aviso-fondo);
+      }
+      .etiqueta {
+        padding: 0.05rem 0.42rem;
+        border: 1px solid var(--linea);
+        border-radius: 999px;
+        font-size: 0.69rem;
+        color: var(--suave);
+      }
+      .etiqueta.ok {
+        border-color: var(--ok-borde);
+        background: var(--ok-fondo);
+        color: var(--ok);
+      }
+      .etiqueta.pendiente {
+        border-color: var(--aviso-borde);
+        background: var(--aviso-fondo);
+        color: var(--aviso);
+      }
+      .herramienta-desc {
+        margin-top: 0.3rem;
+        font-size: 0.78rem;
+      }
+      .checks {
+        margin: 0.55rem 0 0;
+        padding: 0.5rem 0.65rem;
+        list-style: none;
+        display: grid;
+        gap: 0.3rem;
+        border: 1px solid var(--linea);
+        border-radius: 6px;
+        background: var(--superficie);
+        font-size: 0.74rem;
+      }
+      .checks li {
+        display: flex;
+        align-items: baseline;
+        gap: 0.45rem;
+      }
+      .checks .marca {
+        flex: none;
+        width: 0.9rem;
+        text-align: center;
+        font-weight: 700;
+      }
+      .checks li[data-ok='true'] .marca {
+        color: var(--ok);
+      }
+      .checks li[data-ok='false'] .marca {
+        color: var(--aviso);
+      }
+      .checks li[data-ok='false'] .texto-check {
+        color: var(--suave);
+      }
+      .checks .todo-tag {
+        margin-left: auto;
+        padding: 0 0.35rem;
+        border-radius: 4px;
+        background: var(--aviso-fondo);
+        border: 1px solid var(--aviso-borde);
+        color: var(--aviso);
+        font-size: 0.66rem;
+        white-space: nowrap;
+      }
+      .checks li[data-ok='true'] .todo-tag {
+        background: var(--ok-fondo);
+        border-color: var(--ok-borde);
+        color: var(--ok);
+      }
+      .herramienta-card form {
         display: flex;
         flex-wrap: wrap;
         align-items: end;
         gap: 0.5rem;
-        margin-top: 0.4rem;
+        margin-top: 0.6rem;
+        padding-top: 0.6rem;
+        border-top: 1px dashed var(--linea);
       }
       label span {
         display: block;
         font-size: 0.7rem;
         color: var(--suave);
       }
-      .ui {
-        margin-left: 0.5rem;
-        padding: 0 0.35rem;
-        border: 1px solid #15803d55;
-        border-radius: 4px;
-        color: var(--ok);
-        font-size: 0.7rem;
-      }
     </style>
   </head>
   <body>
     <header class="cabecera">
-      <h1>Cliente MCP <small>· probador</small></h1>
-      <p id="servidor" class="suave">conectando…</p>
+      <div class="cabecera-izq">
+        <h1>Cliente MCP <small>· probador</small></h1>
+        <p id="servidor" class="suave">conectando…</p>
+      </div>
+      <span id="resumen-herramientas" class="resumen-badge" role="status">
+        Comprobando herramientas…
+      </span>
     </header>
 
-    <h2>En el chat</h2>
-    <div id="chat" class="chat"></div>
+    <section class="chat-seccion" aria-labelledby="titulo-chat">
+      <div class="chat-barra">
+        <h2 id="titulo-chat">En el chat</h2>
+        <div class="chat-controles">
+          <span id="modo-chat" class="modo-badge">…</span>
+          <button type="button" id="poner-token" class="btn-sutil" hidden>Activar IA (token)</button>
+          <button type="button" id="nueva-chat" class="btn-sutil" title="Empezar una conversación nueva">Reiniciar</button>
+        </div>
+      </div>
 
-    <h2>Herramientas del servidor</h2>
-    <ul id="herramientas" class="herramientas"></ul>
+      <div id="chat" class="chat" aria-live="polite"></div>
+      <p id="pensando" hidden>◆ modelo está pensando…</p>
+
+      <div class="chat-pie">
+        <div id="sugerencias" class="sugerencias" aria-label="Ejemplos rápidos">
+          <button type="button" data-prompt="Algo de viaje por menos de 50 €">Viaje &lt; 50 €</button>
+          <button type="button" data-prompt="Busca teclados">Busca teclados</button>
+          <button type="button" data-prompt="Añade el altavoz al carrito">Añadir altavoz</button>
+          <button type="button" data-prompt="¿Qué llevo en el carrito?">Ver carrito</button>
+        </div>
+        <form id="pregunta" class="compositor">
+          <input name="texto" type="text" placeholder="Escribe lo que quieras probar…" aria-label="Tu mensaje" autocomplete="off" required />
+          <button type="submit" id="enviar">Enviar ▸</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="seccion-herramientas" class="seccion-herramientas" aria-labelledby="titulo-herramientas">
+      <div class="herramientas-cabecera">
+        <h2 id="titulo-herramientas">Herramientas del servidor</h2>
+        <span id="herramientas-contador" class="herramientas-contador"></span>
+      </div>
+      <ul id="herramientas" class="herramientas"></ul>
+    </section>
 
     <script type="module" src="./probador.js"></script>
   </body>

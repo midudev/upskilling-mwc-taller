@@ -3,15 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Catálogo</title>
+    <title>La Tienda · Catálogo</title>
     <!-- ESTILOS -->
   </head>
   <body>
-    <header>
-      <h1 id="titulo">Catálogo</h1>
-      <button id="carrito" type="button">Carrito · 0</button>
+    <header class="cabecera">
+      <div class="cabecera-izq">
+        <span class="marca">la<span>/</span>tienda</span>
+        <h1 id="titulo">Catálogo</h1>
+      </div>
+      <button id="carrito" type="button">Carrito · 0 · 0 €</button>
     </header>
-    <ul id="productos"></ul>
+    <ul id="productos" class="productos"></ul>
     <p id="estado" role="status">Cargando productos…</p>
     <!-- SCRIPT -->
   </body>

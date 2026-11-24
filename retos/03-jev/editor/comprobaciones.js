@@ -80,12 +80,12 @@ export default {
       },
     },
     {
-      titulo: 'Búsqueda inteligente',
+      titulo: 'Búsqueda inteligente (score y criteria)',
       archivo: 'jev.js',
       todo: 'TODO 2',
       pistas: [
-        'Jev responde una puntuación por producto: `answers[producto.id].score`. Con 3 niveles, va de 0 a 2.',
-        'Para que quede entre 0 y 1, divide entre el nivel más alto: `answers[producto.id].score / 2`.',
+        'Para puntuar cada producto en una escala ordenada, el tipo de pregunta de Jev es `\'score\'`.',
+        'La escala de niveles ya está definida justo encima en la constante `NIVELES`: pásala en `criteria: NIVELES`.',
       ],
       async comprobar({ importar, afirmar, ventana }) {
         const { busquedaInteligente } = await importar('jev.js');
@@ -93,41 +93,85 @@ export default {
         exigirToken(TOKEN, afirmar);
 
         await conFetchEspiado(ventana, async (peticiones) => {
-          const lista = await busquedaInteligente('algo para grabar un pódcast');
+          let lista;
+          let errorLlamada;
+          try {
+            lista = await busquedaInteligente('algo para grabar un pódcast');
+          } catch (error) {
+            errorLlamada = error;
+          }
+
           afirmar(peticiones.length === 1, 'Todo el catálogo va en una sola llamada a Jev.');
+          const preguntas = Object.values(peticiones[0].cuerpo?.questions ?? {});
+          afirmar(preguntas.length > 0, 'Faltan las preguntas en `questions`.');
+          afirmar(
+            preguntas.every((q) => q?.type === 'score'),
+            `Para puntuar cada producto en una escala, el tipo debe ser 'score' (ahora es ${JSON.stringify(preguntas[0]?.type)}).`,
+          );
+          afirmar(
+            preguntas.every((q) => Array.isArray(q?.criteria) && q.criteria.length === 3),
+            'El campo `criteria` debe ser la escala de niveles: `NIVELES`.',
+          );
+
+          if (errorLlamada) throw errorLlamada;
 
           const realAnswers = peticiones[0].respuesta?.answers;
           afirmar(realAnswers && typeof realAnswers === 'object', 'Jev no ha devuelto `answers`: revisa el paso 1.');
-          afirmar(Array.isArray(lista), 'busquedaInteligente debería devolver una lista [{ producto, encaje }].');
+          afirmar(Array.isArray(lista) && lista.length > 0, 'Jev no ha devuelto productos recomendados para esta búsqueda.');
           afirmar(
             lista.every((item) => item?.producto?.id && typeof item.encaje === 'number' && !Number.isNaN(item.encaje)),
             'Cada elemento de la lista es { producto, encaje } con encaje numérico.',
-          );
-          afirmar(
-            lista.every((item) => item.encaje >= 0 && item.encaje <= 1),
-            'encaje tiene que quedar entre 0 y 1: divide answers[producto.id].score entre 2.',
-          );
-
-          const esperados = Object.entries(realAnswers)
-            .map(([id, resp]) => ({ id, encaje: resp.score / 2 }))
-            .filter(({ encaje }) => encaje >= 0.5)
-            .sort((a, b) => b.encaje - a.encaje);
-
-          afirmar(esperados.length > 0, 'Jev no ha encontrado productos para esta búsqueda; vuelve a intentarlo.');
-          afirmar(
-            lista.length === esperados.length &&
-              lista.every((item, i) => item.producto.id === esperados[i].id && Math.abs(item.encaje - esperados[i].encaje) < 1e-6),
-            'encaje = answers[producto.id].score / 2 (entre 0 y 1). Solo pasan los que llegan a 0.5, ordenados de mayor a menor.',
           );
         });
       },
     },
     {
-      titulo: 'Moderar reseñas',
+      titulo: 'Tipos de pregunta al moderar (noul y choice)',
       archivo: 'jev.js',
       todo: 'TODO 3',
       pistas: [
-        'Tú eliges el umbral: con una probabilidad de «sí» mayor que `0.5`, la reseña es inapropiada.',
+        'Una pregunta de sí o no (probabilidad de 0 a 1) en Jev es de tipo `\'noul\'`.',
+        'Para elegir una opción entre las claves de `criteria`, el tipo es `\'choice\'`.',
+      ],
+      async comprobar({ importar, afirmar, ventana }) {
+        const { moderarReseña } = await importar('jev.js');
+        const { TOKEN } = await importar('config.js');
+        exigirToken(TOKEN, afirmar);
+
+        const producto = { id: 'mochila-viaje', nombre: 'Mochila de viaje 28 L' };
+        await conFetchEspiado(ventana, async (peticiones) => {
+          let errorLlamada;
+          try {
+            await moderarReseña('Cabe todo para un fin de semana y es muy cómoda', producto);
+          } catch (error) {
+            errorLlamada = error;
+          }
+
+          afirmar(peticiones.length === 1, 'moderarReseña debería hacer una sola llamada a Jev.');
+          const qs = peticiones[0].cuerpo?.questions ?? {};
+          afirmar(
+            qs.inapropiada?.type === 'noul',
+            `La pregunta inapropiada es de sí o no: type debe ser 'noul' (ahora es ${JSON.stringify(qs.inapropiada?.type)}).`,
+          );
+          afirmar(
+            qs.tema?.type === 'choice',
+            `La pregunta tema elige una opción de criteria: type debe ser 'choice' (ahora es ${JSON.stringify(qs.tema?.type)}).`,
+          );
+
+          if (errorLlamada) throw errorLlamada;
+
+          const answers = peticiones[0].respuesta?.answers;
+          afirmar(typeof answers?.inapropiada?.noul === 'number', 'Jev debería devolver `answers.inapropiada.noul`.');
+          afirmar(typeof answers?.tema?.choice === 'string', 'Jev debería devolver `answers.tema.choice`.');
+        });
+      },
+    },
+    {
+      titulo: 'Decidir con las respuestas',
+      archivo: 'jev.js',
+      todo: 'TODO 4',
+      pistas: [
+        'Tú eliges el umbral: con una probabilidad de «sí» mayor que `0.5`, la reseña es inapropiada (`answers.inapropiada.noul > 0.5`).',
         'Para las estrellas, redondea la puntuación y súmale 1: `Math.round(answers.nota.score) + 1`.',
       ],
       async comprobar({ importar, afirmar, ventana }) {

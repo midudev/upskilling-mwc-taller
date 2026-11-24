@@ -5,7 +5,7 @@ export const productos = [
     nombre: 'Teclado mecánico 75 %',
     categoria: 'escritorio',
     precio: 89,
-    emoji: '⌨️',
+    imagen: '/retos/productos/teclado-mecanico.webp',
     descripcion: 'Teclado compacto con switches táctiles, hot-swap y conexión USB-C o Bluetooth.',
     reseñas: [
       { autor: 'Lucía', nota: 5, texto: 'El tacto es una maravilla y la batería me dura dos semanas.' },
@@ -19,7 +19,7 @@ export const productos = [
     nombre: 'Ratón vertical ergonómico',
     categoria: 'escritorio',
     precio: 39,
-    emoji: '🖱️',
+    imagen: '/retos/productos/raton-vertical.webp',
     descripcion: 'Ratón inalámbrico con agarre vertical que reduce la tensión en la muñeca.',
     reseñas: [
       { autor: 'Sergio', nota: 5, texto: 'Se me ha ido el dolor de muñeca en un mes. Cuesta un par de días acostumbrarse.' },
@@ -32,7 +32,7 @@ export const productos = [
     nombre: 'Alfombrilla de escritorio XL',
     categoria: 'escritorio',
     precio: 24,
-    emoji: '🟫',
+    imagen: '/retos/productos/alfombrilla-xl.webp',
     descripcion: 'Alfombrilla de fieltro de 90 × 40 cm con base antideslizante.',
     reseñas: [
       { autor: 'Nuria', nota: 5, texto: 'Viste muchísimo el escritorio y el ratón desliza perfecto.' },
@@ -45,7 +45,7 @@ export const productos = [
     nombre: 'Soporte de aluminio para portátil',
     categoria: 'escritorio',
     precio: 45,
-    emoji: '💻',
+    imagen: '/retos/productos/soporte-portatil.webp',
     descripcion: 'Eleva la pantalla a la altura de los ojos. Plegable y regulable en seis alturas.',
     reseñas: [
       { autor: 'Carlos', nota: 5, texto: 'Muy estable incluso con un portátil de 16 pulgadas.' },
@@ -58,7 +58,7 @@ export const productos = [
     nombre: 'Auriculares con cancelación de ruido',
     categoria: 'audio',
     precio: 149,
-    emoji: '🎧',
+    imagen: '/retos/productos/auriculares-anc.webp',
     descripcion: 'Auriculares de diadema con cancelación activa, 30 horas de batería y micrófono.',
     reseñas: [
       { autor: 'Elena', nota: 5, texto: 'En el tren no oigo absolutamente nada. Comodísimos para llevar gafas.' },
@@ -72,7 +72,7 @@ export const productos = [
     nombre: 'Altavoz Bluetooth portátil',
     categoria: 'audio',
     precio: 59,
-    emoji: '🔊',
+    imagen: '/retos/productos/altavoz-bluetooth.webp',
     descripcion: 'Altavoz resistente al agua (IP67) con 12 horas de autonomía.',
     reseñas: [
       { autor: 'Paula', nota: 5, texto: 'Suena mucho más fuerte de lo que parece por su tamaño. Ideal para la playa.' },
@@ -85,7 +85,7 @@ export const productos = [
     nombre: 'Micrófono USB para streaming',
     categoria: 'audio',
     precio: 79,
-    emoji: '🎙️',
+    imagen: '/retos/productos/microfono-usb.webp',
     descripcion: 'Micrófono de condensador cardioide con brazo articulado y filtro antipop.',
     reseñas: [
       { autor: 'Álex', nota: 5, texto: 'Conectar y listo. Mis directos suenan como un pódcast profesional.' },
@@ -98,7 +98,7 @@ export const productos = [
     nombre: 'Mochila de viaje 28 L',
     categoria: 'viaje',
     precio: 69,
-    emoji: '🎒',
+    imagen: '/retos/productos/mochila-viaje.webp',
     descripcion: 'Mochila impermeable con compartimento acolchado para portátil y apertura tipo maleta.',
     reseñas: [
       { autor: 'Julia', nota: 5, texto: 'Cabe todo para un fin de semana y pasa como equipaje de mano.' },
@@ -111,7 +111,7 @@ export const productos = [
     nombre: 'Batería externa 20 000 mAh',
     categoria: 'viaje',
     precio: 35,
-    emoji: '🔋',
+    imagen: '/retos/productos/bateria-externa.webp',
     descripcion: 'Carga rápida de 65 W por USB-C: sirve para móvil, tableta y portátil.',
     reseñas: [
       { autor: 'Diego', nota: 5, texto: 'Carga mi portátil entero una vez. Imprescindible en vuelos largos.' },
@@ -124,7 +124,7 @@ export const productos = [
     nombre: 'Botella térmica 750 ml',
     categoria: 'viaje',
     precio: 22,
-    emoji: '🧴',
+    imagen: '/retos/productos/botella-termica.webp',
     descripcion: 'Acero inoxidable de doble pared: 24 horas frío, 12 horas caliente.',
     reseñas: [
       { autor: 'Aina', nota: 5, texto: 'Dejé hielo por la mañana y por la noche seguía ahí.' },
@@ -137,7 +137,7 @@ export const productos = [
     nombre: 'Taza con temperatura constante',
     categoria: 'hogar',
     precio: 99,
-    emoji: '☕',
+    imagen: '/retos/productos/taza-inteligente.webp',
     descripcion: 'Mantiene el café a la temperatura que elijas desde el móvil durante 90 minutos.',
     reseñas: [
       { autor: 'Mireia', nota: 4, texto: 'Un capricho, pero se acabó el café frío en las reuniones largas.' },
@@ -150,7 +150,7 @@ export const productos = [
     nombre: 'Lámpara LED de escritorio',
     categoria: 'hogar',
     precio: 49,
-    emoji: '💡',
+    imagen: '/retos/productos/lampara-escritorio.webp',
     descripcion: 'Luz regulable en intensidad y temperatura de color, con cargador inalámbrico en la base.',
     reseñas: [
       { autor: 'Sofía', nota: 5, texto: 'La luz cálida por la noche no cansa nada la vista.' },

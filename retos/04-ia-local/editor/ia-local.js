@@ -27,33 +27,43 @@ export async function disponibilidad() {
   // Algunos navegadores tardan mucho en contestar: si no lo hacen en 3 segundos, vamos al plan B
   const espera = new Promise((resolve) => setTimeout(resolve, 3000, 'unavailable'));
 
-  // La API vive en el objeto global Summarizer: si no está, este navegador no la tiene
-  if (!('Summarizer' in self)) return 'unavailable';
-
-  // TODO 1: pregúntale a la API si puede resumir en español (availability). Gana lo que llegue antes
+  // TODO 1: la API vive en el objeto global Summarizer (en self). Si no está, este navegador no la tiene
   //[hueco TODO 1]
-  return Promise.race([___, espera]).catch(() => 'unavailable');
+  if (!(___)) return 'unavailable';
   //[solución]
-  return Promise.race([Summarizer.availability({ outputLanguage: 'es' }), espera]).catch(() => 'unavailable');
+  if (!('Summarizer' in self)) return 'unavailable';
   //[/hueco]
+
+  // Le pregunta a la API si puede resumir en español (availability). Gana lo que llegue antes
+  return Promise.race([Summarizer.availability({ outputLanguage: 'es' }), espera]).catch(() => 'unavailable');
 }
 
 /** Gemini Nano, el modelo que trae Chrome. La primera vez lo descarga (una sola vez para todas las webs) */
 export async function resumirConChrome(producto, { alProgresar, alEscribir } = {}) {
+  // TODO 2: crea el resumidor con Summarizer.create(), elige el tipo de resumen y el idioma de salida ('es')
+  //[hueco TODO 2]
+  const summarizer = await ___({
+    type: ___, // 'key-points' | 'tldr' | 'teaser' | 'headline'
+  //[solución]
   const summarizer = await Summarizer.create({
     type: 'tldr', // 'key-points' | 'tldr' | 'teaser' | 'headline'
+  //[/hueco]
     format: 'plain-text', // 'markdown' | 'plain-text'
     length: 'short', // 'short' | 'medium' | 'long'
     expectedInputLanguages: ['es'],
+  //[hueco TODO 2]
+    outputLanguage: ___,
+  //[solución]
     outputLanguage: 'es',
+  //[/hueco]
     sharedContext: 'Reseñas de clientes de una tienda online.',
     monitor(monitor) {
       monitor.addEventListener('downloadprogress', (evento) => alProgresar?.(Math.round(evento.loaded * 100)));
     },
   });
 
-  // TODO 2: pide el resumen en streaming (summarizeStreaming) del texto de las reseñas: textoDeReseñas(producto)
-  //[hueco TODO 2]
+  // TODO 3: pide el resumen en streaming (summarizeStreaming) del texto de las reseñas: textoDeReseñas(producto)
+  //[hueco TODO 3]
   const stream = ___;
   //[solución]
   const stream = summarizer.summarizeStreaming(textoDeReseñas(producto));
@@ -88,8 +98,8 @@ export async function resumirConTransformers(producto, { alProgresar, alEscribir
     if (progreso.status === 'progress_total') alProgresar?.(Math.round(progreso.progress));
   };
 
-  // TODO 3: carga el modelo con pipeline(tarea, modelo, opciones). La tarea es generar texto: 'text-generation'
-  //[hueco TODO 3]
+  // TODO 4: carga el modelo con pipeline(tarea, modelo, opciones). La tarea es generar texto: 'text-generation'
+  //[hueco TODO 4]
   generador ??= await ___;
   //[solución]
   generador ??= await pipeline('text-generation', MODELO, { device, dtype, progress_callback });
@@ -100,8 +110,8 @@ export async function resumirConTransformers(producto, { alProgresar, alEscribir
     skip_prompt: true,
     skip_special_tokens: true,
     callback_function(trozo) {
-      // TODO 4: el modelo escribe a trozos: suma cada trozo a `texto` y enseña todo lo que llevas con alEscribir
-      //[hueco TODO 4]
+      // TODO 5: el modelo escribe a trozos: suma cada trozo a `texto` y enseña todo lo que llevas con alEscribir
+      //[hueco TODO 5]
       texto += ___;
       alEscribir?.(___);
       //[solución]

@@ -41,17 +41,34 @@ body: JSON.stringify(___),
 
 ### 2. Búsqueda inteligente
 
-Las preguntas ya están hechas: **una pregunta `score` por producto, todas en la misma llamada**. `answers[producto.id].score` va de `0` a `2` (la posición en `NIVELES`); pásalo a un encaje entre `0` y `1`. Filtrar y ordenar ya está hecho.
+En una sola llamada a Jev enviamos **una pregunta por producto** para puntuar cuánto encaja con la petición del cliente. Falta indicar el tipo de pregunta de puntuación (`score`) y los niveles de la escala (`NIVELES`):
 
 ```js
-encaje: ___,
+type: ___,
+…
+criteria: ___,
 ```
 
 Pruébalo en el resultado: «un regalo para alguien que teletrabaja, por menos de 60 €». Fíjate en el tiempo que aparece junto a los resultados: doce decisiones en una sola llamada. En la **Consola** verás las respuestas de Jev.
 
-### 3. Moderar reseñas
+### 3. Tipos de pregunta al moderar
 
-Antes de publicar una reseña, tres preguntas en una llamada (`noul`, `choice` y `score`). El código decide con números: `inapropiada.noul` es la probabilidad de «sí» (de 0 a 1) y `nota.score` va de 0 a 4.
+Antes de publicar una reseña, hacemos tres preguntas en una sola llamada. Completa el tipo de las dos primeras: `inapropiada` es un sí/no (`noul`) y `tema` elige una opción (`choice`).
+
+```js
+inapropiada: {
+  type: ___,
+  …
+},
+tema: {
+  type: ___,
+  …
+},
+```
+
+### 4. Decidir con las respuestas
+
+El código decide con los números que devuelve Jev: `inapropiada.noul` es la probabilidad de «sí» (de 0 a 1) y `nota.score` va de 0 a 4.
 
 ```js
 const inapropiada = ___;

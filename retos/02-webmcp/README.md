@@ -16,7 +16,7 @@ Hoy un agente que quiere comprar en tu web tiene que mirar la pantalla, adivinar
 
 Vas a registrar las herramientas de la tienda con `document.modelContext.registerTool()`. Todo pasa aquí, en el navegador: completa los huecos amarillos de `webmcp.js` (lo demás está bloqueado), pulsa **Ejecutar** (o `⌘S` / `Ctrl+S`) y mira el resultado. Los archivos con candado son de solo lectura: están para que veas cómo encaja todo.
 
-Debajo de la tienda tienes el panel **Agente**: lo que vería un agente del navegador. Lista tus herramientas, con su descripción y su esquema, y te deja ejecutarlas como lo haría él. Fíjate en que la tienda cambia de verdad.
+Debajo de la tienda tienes el panel **Agente**: lo que vería un agente del navegador. Lista tus herramientas, con su descripción y su esquema, y te deja ejecutarlas como lo haría él. Además, en la esquina inferior derecha de la tienda tienes el icono **Asistente**, un chatbot conectado directamente a tus herramientas WebMCP para hablar con la tienda de forma natural. Fíjate en que la tienda cambia de verdad.
 
 <!-- editor -->
 

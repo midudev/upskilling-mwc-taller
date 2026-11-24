@@ -119,16 +119,123 @@ function responsesToChatMessage(data: any) {
   }
 }
 
+/** Traduce el stream SSE de OpenAI Responses API a eventos ligeros (delta / done / error). */
+function streamResponsesToSse(upstreamBody: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder()
+  const decoder = new TextDecoder()
+
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (payload: unknown) => {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`))
+      }
+
+      const reader = upstreamBody.getReader()
+      let buffer = ''
+      let accText = ''
+      const fallbackCalls: { id: string; type: 'function'; function: { name: string; arguments: string } }[] = []
+      let finished = false
+
+      const handleEvent = (raw: string) => {
+        if (!raw || raw === '[DONE]') return
+        let event: any
+        try {
+          event = JSON.parse(raw)
+        } catch {
+          return
+        }
+
+        if (event.type === 'response.output_text.delta' && typeof event.delta === 'string' && event.delta.length > 0) {
+          accText += event.delta
+          send({ type: 'delta', delta: event.delta })
+          return
+        }
+
+        if (event.type === 'response.output_item.done' && event.item?.type === 'function_call') {
+          fallbackCalls.push({
+            id: event.item.call_id,
+            type: 'function',
+            function: {
+              name: event.item.name,
+              arguments: event.item.arguments || '{}',
+            },
+          })
+          return
+        }
+
+        if (event.type === 'response.completed') {
+          finished = true
+          const message = responsesToChatMessage(event.response ?? {})
+          if (!message.content && accText) message.content = accText
+          if (!message.tool_calls?.length && fallbackCalls.length) message.tool_calls = fallbackCalls
+          send({ type: 'done', message })
+          return
+        }
+
+        if (event.type === 'response.failed' || event.type === 'error') {
+          finished = true
+          const msg =
+            event.response?.error?.message ??
+            event.error?.message ??
+            (typeof event.message === 'string' ? event.message : 'Error al generar la respuesta.')
+          send({ type: 'error', error: msg })
+        }
+      }
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split(/\r?\n/)
+          buffer = lines.pop() ?? ''
+
+          for (const line of lines) {
+            if (!line.startsWith('data:')) continue
+            handleEvent(line.slice(5).trim())
+          }
+        }
+
+        buffer += decoder.decode()
+        for (const line of buffer.split(/\r?\n/)) {
+          if (line.startsWith('data:')) handleEvent(line.slice(5).trim())
+        }
+
+        if (!finished) {
+          if (accText || fallbackCalls.length) {
+            send({
+              type: 'done',
+              message: {
+                role: 'assistant',
+                content: accText || null,
+                ...(fallbackCalls.length ? { tool_calls: fallbackCalls } : {}),
+              },
+            })
+          } else {
+            send({ type: 'error', error: 'El modelo no devolvió ningún mensaje.' })
+          }
+        }
+      } catch (err: any) {
+        if (!finished) send({ type: 'error', error: err?.message ?? String(err) })
+      } finally {
+        reader.releaseLock()
+        controller.close()
+      }
+    },
+  })
+}
+
 export const POST: APIRoute = async ({ request }) => {
   // Con el token del taller, como el resto de las APIs
   const blocked = await guard(request)
   if (blocked) return blocked
   try {
     // El modelo lo fija el servidor: se ignora el que mande el cliente
-    const { messages, tools, reasoning_effort } = (await request.json()) as {
+    const { messages, tools, reasoning_effort, stream } = (await request.json()) as {
       messages?: unknown
       tools?: unknown
       reasoning_effort?: string
+      stream?: boolean
     }
 
     if (!Array.isArray(messages)) {
@@ -146,6 +253,7 @@ export const POST: APIRoute = async ({ request }) => {
       reasoning: { effort: reasoning_effort || DEFAULT_REASONING },
       input,
       store: false,
+      ...(stream ? { stream: true } : {}),
     }
     if (instructions) body.instructions = instructions
 
@@ -170,6 +278,16 @@ export const POST: APIRoute = async ({ request }) => {
     if (!upstream.ok) {
       const errorText = await upstream.text()
       return json({ error: `HTTP ${upstream.status}: ${errorText}` }, upstream.status)
+    }
+
+    if (stream && upstream.body) {
+      return new Response(streamResponsesToSse(upstream.body), {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/event-stream; charset=utf-8',
+          'Cache-Control': 'no-cache, no-transform',
+        },
+      })
     }
 
     const data = await upstream.json()
