@@ -13,3 +13,8 @@ minimumReleaseAgeExclude:
   - astro@7.4.11
   - miniflare@5.20261110.1-beta
   - wrangler@4.160.1
+# Transformers.js 4.3.2 fija onnxruntime-web 1.31.0-dev, que genera un shader LayerNorm inválido en WebGPU:
+# BEN2 (runonweb/remove-bg en /directo/runonweb) tenía que ir en WASM (~60 s). 1.31.1 lo arregla (~1 s).
+# El mismo override está en package.json para bun y npm.
+overrides:
+  onnxruntime-web: 1.31.1
