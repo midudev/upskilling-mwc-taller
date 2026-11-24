@@ -1,12 +1,5 @@
 ---
 import { schedule } from '../data/agenda';
-
-interface Props {
-  /** Muestra el desglose de cada bloque */
-  detailed?: boolean;
-}
-
-const { detailed = false } = Astro.props;
 ---
 
 <ol class="agenda">
@@ -23,27 +16,12 @@ const { detailed = false } = Astro.props;
             {item.title}
           </h3>
           <p class="muted">{item.description}</p>
-          {detailed && item.steps && (
-            <ul class="steps">
-              {item.steps.map((step) => (
-                <li>
-                  <span class="muted">{step.minutes}′</span>
-                  {step.text}
-                </li>
-              ))}
-            </ul>
-          )}
-          {detailed && item.reto && (
-            <a class="reto" href={`/retos/${item.reto}`}>
-              Ver el reto →
-            </a>
-          )}
         </div>
       </li>
     ))
   }
   <li class="item end">
-    <div class="time"><span>18:00</span></div>
+    <div class="time"><span>{schedule.at(-1)?.end}</span></div>
     <div class="body"><h3 class="muted">Fin</h3></div>
   </li>
 </ol>
@@ -88,25 +66,6 @@ const { detailed = false } = Astro.props;
   .descanso h3,
   .descanso .time span:first-child {
     color: var(--muted);
-  }
-
-  .steps {
-    list-style: none;
-    margin: 0.9rem 0 0;
-    padding: 0;
-    font-size: 0.9rem;
-  }
-
-  .steps li {
-    display: grid;
-    grid-template-columns: 2.25rem 1fr;
-    padding-block: 0.15rem;
-  }
-
-  .reto {
-    display: inline-block;
-    margin-top: 0.75rem;
-    font-size: 0.87rem;
   }
 
   .end {
