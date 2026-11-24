@@ -1,6 +1,6 @@
 ---
-// La demo en directo de runonweb. El código que se descomenta está en directo/runonweb/foto.js;
-// esta página solo elige la foto y pinta lo que devuelva cada paso.
+// La demo en directo de runonweb. El código que se descomenta está en directo/runonweb/foto.js y se
+// ejecuta en un Web Worker (src/lib/directo/runonweb); esta página solo elige la foto y pinta cada paso.
 import Base from '../../layouts/Base.astro';
 
 const fotos = [
@@ -49,7 +49,7 @@ const pasos = [
     <ol class="pasos">
       {
         pasos.map((paso) => (
-          <li class="paso" data-paso={paso.id} data-pendiente>
+          <li class="paso" data-paso={paso.id}>
             <header>
               <span class="n">0{paso.n}</span>
               <h2>{paso.titulo}</h2>
@@ -316,17 +316,15 @@ const pasos = [
 </style>
 
 <script>
-  import * as foto from '../../../directo/runonweb/foto.js';
+  import { conectar, type Funcion } from '../../lib/directo/runonweb/cliente.ts';
 
   type Paso = 'fondo' | 'describir' | 'leer';
 
-  // Lo que haya descomentado en directo/runonweb/foto.js
-  const { quitarFondo, describir, leer } = foto as {
-    quitarFondo?: (foto: Blob) => Promise<Blob>;
-    describir?: (foto: Blob, alEscribir?: (texto: string) => void) => Promise<string>;
-    leer?: (texto: string) => Promise<Blob>;
-  };
-  const disponibles: Record<Paso, boolean> = { fondo: !!quitarFondo, describir: !!describir, leer: !!leer };
+  // foto.js vive en un Web Worker: los modelos se descargan y se ejecutan sin bloquear la página
+  const { listo, quitarFondo, describir, leer } = conectar();
+  const FUNCION: Record<Paso, Funcion> = { fondo: 'quitarFondo', describir: 'describir', leer: 'leer' };
+  // Lo que haya descomentado en directo/runonweb/foto.js (se sabe cuando el worker lo ha cargado)
+  const disponibles: Record<Paso, boolean> = { fondo: false, describir: false, leer: false };
 
   const $ = <T extends HTMLElement>(selector: string, raiz: ParentNode = document) => raiz.querySelector<T>(selector)!;
   const $estado = $('#estado');
@@ -405,18 +403,18 @@ const pasos = [
 
     try {
       if (paso === 'fondo') {
-        const png = await quitarFondo!(imagen);
+        const png = await quitarFondo(imagen);
         $recorte.src = URL.createObjectURL(png);
         $recorte.hidden = false;
       } else if (paso === 'describir') {
         $texto.textContent = '';
-        $texto.textContent = await describir!(imagen, (parcial) => {
+        $texto.textContent = await describir(imagen, (parcial) => {
           $detalle.textContent = 'escribiendo…';
           $texto.textContent = parcial;
         });
       } else {
         // Lee la descripción del paso 2; si todavía no hay, el nombre del producto
-        const wav = await leer!($texto.textContent?.trim() || nombre);
+        const wav = await leer($texto.textContent?.trim() || nombre);
         $audio.src = URL.createObjectURL(wav);
         $audio.hidden = false;
         $audio.play().catch(() => {});
@@ -449,8 +447,7 @@ const pasos = [
     }
   }
 
-  for (const [paso, { $boton, $paso }] of Object.entries(tarjetas) as [Paso, (typeof tarjetas)[Paso]][]) {
-    $paso.toggleAttribute('data-pendiente', !disponibles[paso]);
+  for (const [paso, { $boton }] of Object.entries(tarjetas) as [Paso, (typeof tarjetas)[Paso]][]) {
     $boton.addEventListener('click', () => lanzar([paso]));
   }
 
@@ -499,8 +496,19 @@ const pasos = [
   // ── Arranque ──
 
   actualizarBotones();
-  const siguiente = (['fondo', 'describir', 'leer'] as Paso[]).findIndex((paso) => !disponibles[paso]);
-  if (siguiente === -1) mostrarEstado('Elige una foto y pulsa «Todo», o lanza cada paso por separado');
-  else if (siguiente === 0) mostrarEstado('Descomenta el PASO 1 en directo/runonweb/foto.js');
-  else mostrarEstado(`${siguiente === 1 ? 'Paso 1 listo' : `Pasos 1–${siguiente} listos`}. El siguiente: PASO ${siguiente + 1} en directo/runonweb/foto.js`);
+
+  listo.then(
+    (funciones) => {
+      for (const [paso, { $paso }] of Object.entries(tarjetas) as [Paso, (typeof tarjetas)[Paso]][]) {
+        disponibles[paso] = funciones.includes(FUNCION[paso]);
+        $paso.toggleAttribute('data-pendiente', !disponibles[paso]);
+      }
+      actualizarBotones();
+      const siguiente = (['fondo', 'describir', 'leer'] as Paso[]).findIndex((paso) => !disponibles[paso]);
+      if (siguiente === -1) mostrarEstado('Elige una foto y pulsa «Todo», o lanza cada paso por separado');
+      else if (siguiente === 0) mostrarEstado('Descomenta el PASO 1 en directo/runonweb/foto.js');
+      else mostrarEstado(`${siguiente === 1 ? 'Paso 1 listo' : `Pasos 1–${siguiente} listos`}. El siguiente: PASO ${siguiente + 1} en directo/runonweb/foto.js`);
+    },
+    (error) => mostrarEstado(`directo/runonweb/foto.js no carga: ${error instanceof Error ? error.message : error}`, true),
+  );
 </script>

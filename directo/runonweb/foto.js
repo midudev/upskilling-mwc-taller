@@ -12,7 +12,7 @@ const avisar = (paso) => (progreso) => dispatchEvent(new CustomEvent('runonweb',
 // BEN2 (~220 MB) separa el objeto del fondo y devuelve un PNG transparente.
 import { RemoveBackground } from 'runonweb/remove-bg';
 
-const recortador = new RemoveBackground({ device: 'wasm', onProgress: avisar('fondo') });
+const recortador = new RemoveBackground({ onProgress: avisar('fondo') });
 
 export async function quitarFondo(foto) {
   return recortador.remove(foto); // Blob PNG con transparencia
