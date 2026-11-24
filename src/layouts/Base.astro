@@ -33,6 +33,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     {/* Lo primero del <head>: los preload de las fuentes arrancan antes que nada */}
     <Font cssVariable="--font-pixel" preload />
     <Font cssVariable="--font-mono" preload />
+    <Font cssVariable="--font-sans" preload />
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title ? `${title} · ${SITE}` : SITE}</title>

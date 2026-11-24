@@ -3,11 +3,13 @@
   --surface: #111111;
   --line: #262626;
   --fg: #ededed;
+  --text: #b4b4bc;
   --muted: #8f8f8f;
   --accent: #ff3b30;
   /* @font-face, preload y fallbacks los genera <Font /> (ver fonts en astro.config.mjs) */
   --pixel: var(--font-pixel);
   --mono: var(--font-mono);
+  --sans: var(--font-sans);
   color-scheme: dark;
 
   /* Syntax highlighting: tokens de Geist (Vercel) con más saturación, tema css-variables de Shiki */

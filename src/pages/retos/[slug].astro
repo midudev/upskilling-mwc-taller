@@ -49,21 +49,46 @@ const config = reto.editor ? configDelEditor(reto.slug, reto.editor) : null;
   }
 
   .resumen {
-    max-width: 60ch;
-    font-size: 1.05rem;
-    margin-bottom: 3rem;
+    font-family: var(--sans);
+    max-width: 62ch;
+    font-size: 1.08rem;
+    line-height: 1.65;
+    color: #9c9ca4;
+    margin-bottom: 2.75rem;
+  }
+
+  .prose {
+    font-family: var(--sans);
+    font-size: 1.02rem;
+    line-height: 1.75;
+    color: var(--text);
   }
 
   .prose :global(h2) {
+    color: var(--fg);
     font-size: 1.7rem;
-    margin-block: 3rem 1rem;
+    margin-block: 3rem 1.1rem;
     padding-top: 1.5rem;
     border-top: 1px solid var(--line);
   }
 
   .prose :global(h3) {
     font-size: 1.2rem;
-    margin-block: 2rem 0.75rem;
+    margin-block: 2.25rem 0.75rem;
+    color: #ffd27a;
+  }
+
+  .prose :global(h3 code) {
+    color: inherit;
+    border-color: color-mix(in srgb, #ffd27a 30%, var(--line));
+    background: color-mix(in srgb, #ffd27a 8%, var(--surface));
+  }
+
+  .prose :global(p),
+  .prose :global(ul),
+  .prose :global(ol),
+  .prose :global(blockquote) {
+    max-width: 66ch;
   }
 
   .prose :global(p),
@@ -72,7 +97,29 @@ const config = reto.editor ? configDelEditor(reto.slug, reto.editor) : null;
   .prose :global(pre),
   .prose :global(blockquote),
   .prose :global(table) {
-    margin-block: 0 1.1rem;
+    margin-block: 0 1.2rem;
+  }
+
+  .prose :global(strong) {
+    color: #e4e4e9;
+    font-weight: 600;
+  }
+
+  .prose :global(em) {
+    color: #d0d0d8;
+  }
+
+  .prose :global(:not(pre) > code) {
+    font-size: 0.85em;
+    color: #e5d2a8;
+    background: #161514;
+    border: 1px solid #2b2720;
+    border-radius: 5px;
+    padding: 0.12em 0.42em;
+  }
+
+  .prose :global(pre) {
+    font-family: var(--mono);
   }
 
   .prose :global(ul),
@@ -81,7 +128,7 @@ const config = reto.editor ? configDelEditor(reto.slug, reto.editor) : null;
   }
 
   .prose :global(li) {
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.45rem;
   }
 
   .prose :global(li::marker) {
@@ -90,9 +137,13 @@ const config = reto.editor ? configDelEditor(reto.slug, reto.editor) : null;
 
   .prose :global(blockquote) {
     margin-inline: 0;
-    padding: 0.1rem 0 0.1rem 1.1rem;
-    border-left: 2px solid var(--accent);
-    color: var(--muted);
+    padding: 0.85rem 1.15rem;
+    border-left: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+    border-radius: 0 6px 6px 0;
+    background: var(--surface);
+    color: #9c9ca4;
+    font-size: 0.94rem;
+    line-height: 1.65;
   }
 
   .prose :global(blockquote p:last-child) {
@@ -102,7 +153,8 @@ const config = reto.editor ? configDelEditor(reto.slug, reto.editor) : null;
   .prose :global(table) {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9rem;
+    font-size: 0.94rem;
+    line-height: 1.55;
   }
 
   .prose :global(th),

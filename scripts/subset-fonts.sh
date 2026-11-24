@@ -38,6 +38,9 @@ mkdir -p "$OUT"
 # Geist Mono variable recortada a los pesos que usa la web: 400, 500 (.intro strong) y 700 (<strong>, <th>)
 "${FT[@]}" varLib.instancer "$SRC/geist-mono/GeistMono-Variable.ttf" wght=400:700 -q -o "$TMP/mono.ttf"
 "${FT[@]}" subset "$TMP/mono.ttf" "${OPTS[@]}" --output-file="$OUT/GeistMono-Latin.woff2"
+# Geist Sans variable recortada para lectura cómoda en los textos largos de los retos (400–600)
+"${FT[@]}" varLib.instancer "$SRC/geist-sans/Geist-Variable.ttf" wght=400:600 -q -o "$TMP/sans.ttf"
+"${FT[@]}" subset "$TMP/sans.ttf" "${OPTS[@]}" --output-file="$OUT/Geist-Latin.woff2"
 "${FT[@]}" subset "$SRC/geist-pixel/GeistPixel-Square.woff2" "${OPTS[@]}" --output-file="$OUT/GeistPixel-Square-Latin.woff2"
 
 ls -l "$OUT"

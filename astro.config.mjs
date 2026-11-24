@@ -11,6 +11,7 @@ import { PAQUETES } from './src/lib/retos/paquetes.js';
 // /_astro/fonts/ (caché inmutable), inyecta el @font-face en línea y genera fallbacks con métricas
 // ajustadas para evitar saltos de layout mientras cargan.
 const fallbacks = ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'];
+const sansFallbacks = ['system-ui', '-apple-system', 'Segoe UI', 'sans-serif'];
 
 // /directo/mario: la ROM vive en games/ (ignorado por git) y solo la sirve el servidor de desarrollo.
 // En el deploy no está: la página pide arrastrar el .nes y lo guarda en el navegador.
@@ -142,6 +143,15 @@ export default defineConfig({
       fallbacks,
       options: {
         variants: [{ src: ['./src/assets/fonts/GeistMono-Latin.woff2'], weight: '400 700', style: 'normal' }],
+      },
+    },
+    {
+      provider: fontProviders.local(),
+      name: 'Geist',
+      cssVariable: '--font-sans',
+      fallbacks: sansFallbacks,
+      options: {
+        variants: [{ src: ['./src/assets/fonts/Geist-Latin.woff2'], weight: '400 600', style: 'normal' }],
       },
     },
   ],
