@@ -8,8 +8,7 @@ Este repositorio contiene:
 
 | Carpeta | Qué es |
 | --- | --- |
-| `src/` | La web del taller (Astro): inicio, agenda, enunciados de los retos, documentación de las APIs y la presentación |
-| `src/pages/api/` | Las APIs del taller: un proxy de **Jev** y otro de **OpenAI**, protegidos con un token compartido |
+| `src/` | La web del taller (Astro): inicio, agenda, enunciados de los retos y la presentación |
 | `retos/` | Los cuatro retos y uno extra (runonweb). Se hacen en el navegador: `editor/` tiene los archivos del editor de la web y `README.md`, el enunciado |
 | `directo/` | El código de las partes en directo, en pasos comentados que se descomentan. `directo/liga`: un MCP con los resultados de LaLiga y, después, con interfaz; `directo/jev`: la primera decisión con Jev; `directo/runonweb`: una foto pasa por tres modelos en el navegador |
 
@@ -35,8 +34,7 @@ pnpm dev
 
 | Ruta | Contenido |
 | --- | --- |
-| `/` | Presentación del taller y requisitos |
-| `/agenda` | Agenda con los tiempos de cada bloque (se edita en `src/data/agenda.ts`) |
+| `/` | Presentación del taller, agenda (`src/data/agenda.ts`) y requisitos |
 | `/retos` | Los retos, con el editor en la página. Se generan a partir de `retos/*/README.md` y `retos/*/editor/` |
 | `/slides` | La presentación |
 | `/directo` | Las demos en directo. Las de IA local (`/directo/traductor`, `/directo/chat`, `/directo/runonweb`) descargan sus modelos la primera vez: ábrelas antes de la charla para que queden en la caché |
@@ -46,23 +44,6 @@ pnpm dev
 `→` `espacio` `Enter` siguiente · `←` anterior · `Inicio` / `Fin` · `F` pantalla completa. También con clic (mitad derecha o izquierda) y con mando de presentaciones. Cada slide tiene su URL: `/slides#12`.
 
 Las slides están en `src/pages/slides.astro`; la primera y la última son las imágenes de `public/slides/`.
-
-## Las APIs
-
-Los asistentes usan un único token (`WORKSHOP_TOKEN`). Las claves reales se quedan en el servidor.
-
-| Endpoint | Destino |
-| --- | --- |
-| `POST /api/jev` (o `/api/jev/v1/systemone`) | `api.typesafe.ai/v1/systemone` |
-| `GET /api/jev/v1/models` | `api.typesafe.ai/v1/models` |
-| `POST /api/openai/v1/chat/completions` | OpenAI |
-| `POST /api/openai/v1/responses` | OpenAI |
-| `GET /api/openai/v1/models` | El modelo permitido (`gpt-6-luna`) |
-
-- CORS abierto, para llamarlas desde el navegador.
-- Límite por IP de 10 peticiones cada 10 s y 30 por minuto (Jev, con contadores propios: 15 cada 10 s y 50 por minuto), y 256 KB por petición (`wrangler.jsonc` y `src/lib/proxy.ts`). Las respuestas 429 llevan `Retry-After` (el SDK de OpenAI reintenta solo).
-- El único modelo de OpenAI permitido es `gpt-6-luna`, y cada petición tiene un techo de gasto: razonamiento como mucho `medium`, 8.192 tokens de salida, `service_tier` `default` (o `flex`), `n = 1`, solo herramientas `function`, hasta 4 imágenes, sin archivos ni `previous_response_id`. Todo va fijo en `src/lib/openai-limits.ts`.
-- Son compatibles con los SDK oficiales cambiando la `baseURL`.
 
 ## Despliegue en Cloudflare
 
@@ -84,7 +65,7 @@ Una misma tienda online, cuatro piezas. Los asistentes los hacen **en la web del
 | --- | --- | --- |
 | 1 · MCP UI | `server.js` y `vista/app.js` | Un probador: cliente MCP + host de MCP Apps, con tu servidor ejecutándose en el navegador |
 | 2 · WebMCP | `webmcp.js` | La tienda y el panel **Agente**, que lista y ejecuta tus herramientas de `document.modelContext` |
-| 3 · Jev | `jev.js` | La tienda, con búsqueda inteligente y moderación de reseñas (llama a `/api/jev` con el token ya puesto) |
+| 3 · Jev | `jev.js` | La tienda, con búsqueda inteligente y moderación de reseñas |
 | 4 · IA local | `ia-local.js` | La tienda, con el resumen de reseñas (Gemini Nano o Transformers.js) |
 | 5 · runonweb (extra) | `runonweb.js` | La tienda, con traducción, búsqueda por significado y dictado |
 
@@ -107,7 +88,7 @@ Una misma tienda online, cuatro piezas. Los asistentes los hacen **en la web del
 - **La lista de archivos**, el HTML de entrada y lo que necesita cada reto van en el frontmatter del `README.md` (`editor:`). El enunciado se parte en `<!-- editor -->`: lo de antes va encima del editor y el resto, debajo.
 - **Se ejecuta en un iframe** sin servidor ni bundler (`src/lib/retos/ejecutar.ts`): cada `.js` es un módulo `blob:` y un import map resuelve los imports relativos y los paquetes de npm. El iframe es del mismo origen que la web, así que las comprobaciones leen su `window`.
 - **Los paquetes de npm** que importa el código de los retos (SDK de MCP, `zod`, Transformers.js, runonweb) se empaquetan en `public/retos/vendor/` con `scripts/vendor-retos.mjs`. Lo lanza solo `astro dev` / `astro build` cuando cambian los lockfiles (no está en git). La lista está en `src/lib/retos/paquetes.js`.
-- **Las comprobaciones** se ejecutan en otro iframe, oculto, para no tocar lo que ve el asistente. No llaman a las APIs ni descargan modelos: usan `fetch` falsos y módulos falsos (`falsos` en `comprobaciones.js`). Así la sala entera puede comprobar a la vez sin gastar el límite de peticiones.
+- **Las comprobaciones** se ejecutan en otro iframe, oculto, para no tocar lo que ve el asistente. No hacen peticiones reales ni descargan modelos: usan `fetch` falsos y módulos falsos (`falsos` en `comprobaciones.js`).
 - **WebMCP** (reto 2): el editor pone su propia `document.modelContext` (`src/lib/retos/runtime/webmcp.js`) para que funcione en cualquier navegador, sin el flag de Chrome.
 - Lo que cada asistente escribe en los huecos se guarda en su `localStorage`. **Reiniciar** lo borra y **Ver solución** → **Copiar a tus huecos** lo sustituye por la solución. Si cambias el texto fijo de un archivo (lo que no está en un hueco), lo guardado de ese archivo deja de valer.
 - **El resultado va en claro** (la tienda, el probador y la vista del reto 1) para distinguirlo del código, que es oscuro.
