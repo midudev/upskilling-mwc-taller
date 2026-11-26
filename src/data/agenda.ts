@@ -18,8 +18,8 @@ export interface AgendaItem {
   reto?: string;
 }
 
-/** Hora de inicio del taller (11:00) en minutos desde medianoche */
-export const START = 11 * 60;
+/** Hora de inicio del taller (16:00) en minutos desde medianoche */
+export const START = 16 * 60;
 
 export const agenda: AgendaItem[] = [
   {
