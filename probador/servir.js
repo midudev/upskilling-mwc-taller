@@ -20,9 +20,9 @@ async function tokenDelTaller() {
   if (TOKEN) return TOKEN;
   try {
     const variables = await readFile(new URL('../.dev.vars', import.meta.url), 'utf8');
-    return variables.match(/^WORKSHOP_TOKEN\s*=\s*["']?([^"'\s]+)/m)?.[1] ?? 'MIDULL';
+    return variables.match(/^WORKSHOP_TOKEN\s*=\s*["']?([^"'\s]+)/m)?.[1] ?? 'MIDUG';
   } catch {
-    return 'MIDULL';
+    return 'MIDUG';
   }
 }
 

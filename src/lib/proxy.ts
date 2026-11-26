@@ -67,7 +67,7 @@ export function error(status: number, message: string, type = 'workshop_error'):
 }
 
 /** Token interno del taller. No se expone en el cliente: la gente lo escribe en la web y se guarda en localStorage. */
-const INTERNAL_WORKSHOP_TOKEN = 'MIDULL';
+const INTERNAL_WORKSHOP_TOKEN = 'MIDUG';
 
 export function isValidToken(token: string): boolean {
   return token.trim().toUpperCase() === INTERNAL_WORKSHOP_TOKEN;
