@@ -93,6 +93,9 @@ export async function guard(request: Request, profile: RateLimitProfile = 'defau
     return error(413, `La petición supera el máximo de ${MAX_BODY_BYTES / 1024} KB.`);
   }
 
+  // En local (astro dev) no hay límite de peticiones: solo se aplica en el deploy
+  if (import.meta.env.DEV) return null;
+
   const ip = request.headers.get('cf-connecting-ip') ?? 'local';
   for (const { binding, period, message } of RATE_LIMITS[profile]) {
     const limiter = env[binding];
