@@ -213,18 +213,8 @@ body {
   }
 }
 
-@keyframes steam {
-  50% {
-    transform: translateY(-1px);
-  }
-}
-
 .blink [fill='var(--accent)'] {
   animation: blink 1.4s steps(1, end) infinite;
-}
-
-.steam [fill='var(--muted)'] {
-  animation: steam 1s steps(1, end) infinite;
 }
 
 /* Icono en línea con el texto: tablas, títulos y enlaces */
@@ -522,8 +512,7 @@ pre + .list {
   font-variant-numeric: tabular-nums;
 }
 
-.agenda .min,
-.agenda .descanso {
+.agenda .min {
   color: var(--muted);
 }
 

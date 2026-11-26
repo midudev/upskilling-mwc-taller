@@ -7,7 +7,7 @@ export interface AgendaStep {
 export interface AgendaItem {
   /** Minutos totales del tramo */
   minutes: number;
-  kind: 'intro' | 'bloque' | 'descanso' | 'cierre';
+  kind: 'intro' | 'bloque' | 'cierre';
   /** Número de bloque (solo en los bloques) */
   block?: number;
   title: string;
@@ -59,12 +59,6 @@ export const agenda: AgendaItem[] = [
       { minutes: 7, text: 'Repaso: la solución y un agente de verdad en Chrome' },
     ],
     reto: '02-webmcp',
-  },
-  {
-    minutes: 10,
-    kind: 'descanso',
-    title: 'Descanso',
-    description: 'Café, dudas y tiempo para ponerse al día.',
   },
   {
     minutes: 30,
