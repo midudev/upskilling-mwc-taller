@@ -18,6 +18,8 @@ const agendaIcon = (item: (typeof schedule)[number]): IconName => {
   if (item.kind === 'intro') return 'flag';
   return item === schedule.at(-1) ? 'ask' : 'cart';
 };
+// Hora de inicio de cada bloque, sacada de la agenda
+const blockStart = (block: number) => schedule.find((item) => item.block === block)?.start;
 const B1 = 'Bloque 1 · MCP UI';
 const B2 = 'Bloque 2 · WebMCP';
 const B3 = 'Bloque 3 · Jev';
@@ -311,7 +313,7 @@ const salida = await generador(mensajes, { max_new_tokens: 120 });`;
       </Slide>
 
       <!-- ─────────────── Bloque 1 · MCP UI ─────────────── -->
-      <Slide kind="section" label="Bloque 1 · 11:10">
+      <Slide kind="section" label={`Bloque 1 · ${blockStart(1)}`}>
         <div class="split">
           <div>
             <p class="num">01</p>
@@ -432,7 +434,7 @@ const salida = await generador(mensajes, { max_new_tokens: 120 });`;
       </Slide>
 
       <!-- ─────────────── Bloque 2 · WebMCP ─────────────── -->
-      <Slide kind="section" label="Bloque 2 · 11:50">
+      <Slide kind="section" label={`Bloque 2 · ${blockStart(2)}`}>
         <div class="split">
           <div>
             <p class="num">02</p>
@@ -527,7 +529,7 @@ const salida = await generador(mensajes, { max_new_tokens: 120 });`;
       </Slide>
 
       <!-- ─────────────── Bloque 3 · Jev ─────────────── -->
-      <Slide kind="section" label="Bloque 3 · 12:25">
+      <Slide kind="section" label={`Bloque 3 · ${blockStart(3)}`}>
         <div class="split">
           <div>
             <p class="num">03</p>
@@ -626,7 +628,7 @@ const salida = await generador(mensajes, { max_new_tokens: 120 });`;
       </Slide>
 
       <!-- ─────────────── Bloque 4 · IA local ─────────────── -->
-      <Slide kind="section" label="Bloque 4 · 12:55">
+      <Slide kind="section" label={`Bloque 4 · ${blockStart(4)}`}>
         <div class="split">
           <div>
             <p class="num">04</p>
